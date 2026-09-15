@@ -1,4 +1,4 @@
-import {LIUBEI_THEME,DEFAULT_DECK,DECK_CARDS,MAX_DECK_SIZE,normalizeUnitLevel} from './theme.js';
+import {LIUBEI_THEME,DEFAULT_DECK,DECK_CARDS,MAX_DECK_SIZE,normalizeUnitLevel,normalizeTraining} from './theme.js';
 export const WIDTH = 1440, HEIGHT = 810;
 export const AIRBORNE_LIMIT = 6;
 export const ENEMY_LIMIT = LIUBEI_THEME.waveTimes.length + LIUBEI_THEME.gateWaveTimes.length + AIRBORNE_LIMIT + 2;
@@ -6,12 +6,14 @@ export const GRID_SPACING = 178;
 export const rangeLabel = def => def.range>=GRID_SPACING ? `${Math.round(def.range/GRID_SPACING*10)/10} 格` : def.range ? '近身' : '—';
 const STARTING_GOLD = 180;
 const GOLD_PER_SECOND = 4.2;
+export const militaryIncomeFor=level=>GOLD_PER_SECOND*(1+normalizeTraining(level)*.05);
+export const ALLY_STAT_MULTIPLIER = 1.1;
 const ENEMY_HIT_RADIUS = 40;
 // Feet align to the painted floor surfaces in town-v1.webp (bottom to top).
 export const FLOOR_Y = [665, 433, 236];
 export const CARD_ORDER = [...DECK_CARDS];
 export const TYPES = {
-  zhangfei: { name: '张飞', cost: 130, hp: 400, damage: 18, interval: 1.35, range: 116, unique: true, locked:true, color: '#d46b49', skill: '长坂怒吼', shortSkill: '怒吼', skillTime: 12, help: '怒吼震晕 1.5 秒 · 短暂减伤' },
+  zhangfei: { name: '张飞', cost: 130, hp: 400, damage: 18, interval: 1.35, range: 116, unique: true, locked:true, color: '#d46b49', skill: '长坂怒吼', shortSkill: '怒吼', skillTime: 12, help: '怒吼震晕 · 短暂减伤' },
   guanyu: { name: '关羽', cost: 150, hp: 290, damage: 29, interval: 1.55, range: 165, unique: true, locked:true, color: '#81bc71', skill: '青龙横扫', shortSkill: '横扫', skillTime: 11, help: '自动横扫一片 · 近战群攻' },
   zhugeliang: { name: '诸葛亮', cost: 135, hp: 150, damage: 12, interval: 1.8, range: GRID_SPACING*4, ranged: true, unique: true, locked:true, color: '#90d9e5', skill: '借东风', shortSkill: '东风', skillTime: 13, help: '射程 4 格 · 远程风弹 · 东风吹退' },
   archer: { name: '弓箭手', cost: 65, hp: 85, damage: 14, interval: 1.4, range: GRID_SPACING*4, ranged: true, color: '#e7bd68', help: '射程 4 格 · 可越过拒马射击 · 可部署多个' },
@@ -24,14 +26,21 @@ export const TYPES = {
   oil: { name: '火油', cost: 85, damage:22, locked:true, instant: true, cooldown:10, color: '#ff9451', help: '持续灼烧 · 冷却 10 秒' },
   ballista: {name:'诸葛连弩车',cost:110,hp:165,damage:14,interval:2.35,range:GRID_SPACING*4,ranged:true,device:true,locked:true,color:'#92c47c',help:'射程 4 格 · 三连射 · 优先扛人的'},
   catapult: {name:'卧龙投石车',cost:130,hp:180,damage:48,interval:4.2,range:GRID_SPACING*4,minRange:150,ranged:true,device:true,locked:true,color:'#e4bb69',help:'射程 4 格 · 范围抛射 · 近处打不到'},
-  snare: {name:'草鞋绊马索',cost:30,hp:1,damage:0,range:0,device:true,trap:true,locked:true,color:'#bac995',help:'踩中震晕 2.4 秒 · 一次性'}
+  snare: {name:'草鞋绊马索',cost:30,hp:1,damage:0,range:0,device:true,trap:true,locked:true,color:'#bac995',help:'踩中震晕 · 一次性'}
 };
 // Share these calculations with unit details and upgrade previews.
-export function unitStatsFor(type,level=1,bonus=0){
+export function unitStatsFor(type,level=1,bonus=0,training={}){
   const def=TYPES[type],rank=normalizeUnitLevel(level),quality=Number.isFinite(bonus)?Math.max(0,Math.min(.5,bonus)):0;
-  const damageMultiplier=1+quality+(rank-1)*.05;
-  return {...def,level:rank,damageMultiplier,damage:(def.damage||0)*damageMultiplier,
-    hp:def.hp&&!def.trap?Math.round(def.hp*(1+(rank-1)*.06)):def.hp,
+  const damageMultiplier=(1+quality+(rank-1)*.05)*ALLY_STAT_MULTIPLIER;
+  const controlMultiplier=(1+quality)*ALLY_STAT_MULTIPLIER,cooldownMultiplier=1-normalizeTraining(training.cooldown)*.03;
+  return {...def,level:rank,damageMultiplier,cooldownMultiplier,damage:(def.damage||0)*damageMultiplier,
+    hp:def.hp?(def.trap?def.hp*ALLY_STAT_MULTIPLIER:Math.round(def.hp*(1+(rank-1)*.06)*ALLY_STAT_MULTIPLIER)):def.hp,
+    interval:def.interval?def.interval*cooldownMultiplier:undefined,
+    skillTime:def.skillTime?def.skillTime*cooldownMultiplier:undefined,
+    cooldown:def.cooldown?def.cooldown*cooldownMultiplier:undefined,
+    stunDuration:type==='zhangfei'?1.5*controlMultiplier:undefined,
+    slowDuration:type==='zhugeliang'?2.5*controlMultiplier:undefined,
+    knockback:type==='zhugeliang'?130*controlMultiplier:type==='log'?45*ALLY_STAT_MULTIPLIER:undefined,
     trapDuration:def.trap?2.4*damageMultiplier:undefined};
 }
 export const ENEMY_TYPES = {
@@ -68,7 +77,10 @@ export class Game {
     this.loadout={themeId:loadout.themeId,deck:[...(loadout.deck||DEFAULT_DECK)],unlocked:[...(loadout.unlocked||[])],bonuses:{...loadout.bonuses},labels:{...loadout.labels},levels:{...loadout.levels}};
     this.themeId=loadout.themeId||LIUBEI_THEME.id;
     this.deck=[...new Set(loadout.deck||DEFAULT_DECK)].filter(id=>DECK_CARDS.includes(id)&&this.isUnlocked(id)).slice(0,MAX_DECK_SIZE);
-    this.types=Object.fromEntries(Object.keys(TYPES).map(id=>[id,unitStatsFor(id,this.loadout.levels[id],this.boost(id))]));
+    this.loadout.training=Object.fromEntries(Object.entries(loadout.training||{}).map(([id,paths])=>[id,{...paths}]));
+    this.loadout.incomeLevel=normalizeTraining(loadout.incomeLevel);
+    this.incomePerSecond=militaryIncomeFor(this.loadout.incomeLevel);
+    this.types=Object.fromEntries(Object.keys(TYPES).map(id=>[id,unitStatsFor(id,this.loadout.levels[id],this.boost(id),this.loadout.training[id])]));
     this.mode = 'ready'; this.time = 0; this.gold = STARTING_GOLD; this.kills = 0; this.rescues = 0;
     this.units = []; this.enemies = []; this.effects = []; this.events = [];
     this.liu = { s: 205, carrier: null, walk: 0, dash:0, skillCooldown:0 }; this.nextSpawn = LIUBEI_THEME.waveTimes[0]; this.serial = 0; this.spawned = 0;
@@ -113,7 +125,7 @@ export class Game {
     } else if (type === 'oil') {
       this.effects.push({ kind: 'oil', floor: slot.floor, x: slot.x, y: slot.y, life: 6, maxLife: 6 });
     } else {
-      this.units.push({ type, slot: id, hp: def.hp, maxHp: def.hp, cooldown: .25, skillCooldown:def.skillTime?2.5:0, guard:0, attack: 0, hit: 0, born: this.time, dir: slot.floor === 1 ? 1 : -1 });
+      this.units.push({ type, slot: id, hp: def.hp, maxHp: def.hp, cooldown: .25, skillCooldown:def.skillTime?2.5*def.cooldownMultiplier:0, guard:0, attack: 0, hit: 0, born: this.time, dir: slot.floor === 1 ? 1 : -1 });
       this.effects.push({ kind: 'summon', x: slot.x, y: slot.y, life: .55, maxLife: .55, color: def.color });
     }
     this.event('place', { unitType:type, slot:id, x: slot.x, y: slot.y });
@@ -145,7 +157,7 @@ export class Game {
     effect.s=this.liu.s;const p=locate(effect.s);effect.x=p.x;effect.y=p.y;effect.dir=p.dir;
     for(const enemy of this.enemies){
       if(enemy.hp<=0||enemy.airborne>0||Math.abs(enemy.s-effect.s)>250)continue;
-      enemy.guard=0;enemy.stun=2;enemy.dash=0;this.damage(enemy,90,'magic',true);
+      enemy.guard=0;enemy.stun=2*ALLY_STAT_MULTIPLIER;enemy.dash=0;this.damage(enemy,90*ALLY_STAT_MULTIPLIER,'magic',true);
     }
     if(this.liu.carrier){
       const carrier=this.enemies.find(e=>e.id===this.liu.carrier);
@@ -271,17 +283,17 @@ export class Game {
     enemy.carrying = false;
   }
   castSkill(unit,targets) {
-    const def=this.types[unit.type],slot=SLOTS[unit.slot],power=1+this.boost(unit.type),damagePower=def.damageMultiplier;
+    const def=this.types[unit.type],slot=SLOTS[unit.slot],damagePower=def.damageMultiplier;
     unit.skillCooldown=def.skillTime;unit.attackDuration=.75;unit.attack=.75;unit.casting=.75;
     const remote=unit.type==='zhugeliang',center=remote?locate(targets[0].s):slot;
     const area=targets.filter(e=>Math.abs(locate(e.s).x-center.x)<(remote?140:215)).slice(0,5);
     if(unit.type==='zhangfei'){
       unit.guard=2.4;
-      for(const enemy of area){enemy.guard=0;enemy.stun=1.5*power;enemy.dash=0;enemy.charge=0;enemy.windup=0;this.damage(enemy,12*damagePower,'magic',true);}
+      for(const enemy of area){enemy.guard=0;enemy.stun=def.stunDuration;enemy.dash=0;enemy.charge=0;enemy.windup=0;this.damage(enemy,12*damagePower,'magic',true);}
     }else if(unit.type==='guanyu'){
       for(const enemy of area)this.damage(enemy,44*damagePower,'physical',true);
     }else{
-      for(const enemy of area){this.damage(enemy,18*damagePower,'magic',true);if(enemy.hp>0){if(this.moveEnemy(enemy,enemy.s+(Math.sign(enemy.s-slot.s)||-1)*130*power))return;enemy.slow=2.5*power;}}
+      for(const enemy of area){this.damage(enemy,18*damagePower,'magic',true);if(enemy.hp>0){if(this.moveEnemy(enemy,enemy.s+(Math.sign(enemy.s-slot.s)||-1)*def.knockback))return;enemy.slow=def.slowDuration;}}
     }
     this.effects.push({kind:unit.type==='zhangfei'?'roar':unit.type==='guanyu'?'dragon':'gust',x:center.x,y:center.y-55,dir:unit.dir,color:def.color,life:.8,maxLife:.8});
     this.shake=Math.max(this.shake,.28);this.event('skill',{hero:unit.type,skill:def.skill,color:def.color});
@@ -332,7 +344,7 @@ export class Game {
   }
   update(dt) {
     if (this.mode !== 'running') return;
-    dt = Math.min(dt, .05); this.time += dt; this.gold += dt*GOLD_PER_SECOND; this.shake = Math.max(0, this.shake-dt);
+    dt = Math.min(dt, .05); this.time += dt; this.gold += dt*this.incomePerSecond; this.shake = Math.max(0, this.shake-dt);
     for(const type of Object.keys(this.cooldowns))this.cooldowns[type]=Math.max(0,this.cooldowns[type]-dt);
     this.liu.dash=Math.max(0,this.liu.dash-dt);this.liu.skillCooldown=Math.max(0,this.liu.skillCooldown-dt);
     this.bestProgress=Math.max(this.bestProgress,this.liu.s/ROUTE_LENGTH);
@@ -372,7 +384,7 @@ export class Game {
         for (const e of this.enemies) {
           const p = locate(e.s);
           if (e.hp > 0 && !(e.airborne>0) && p.floor === effect.floor && p.x >= Math.min(previous,effect.x)-50 && p.x <= Math.max(previous,effect.x)+50 && !effect.hit.has(e.id)) {
-            effect.hit.add(e.id); this.damage(e, this.types.log.damage,'physical',true); if(e.hp>0&&this.moveEnemy(e,e.s-45))return; this.shake = .18;
+            effect.hit.add(e.id); this.damage(e, this.types.log.damage,'physical',true); if(e.hp>0&&this.moveEnemy(e,e.s-this.types.log.knockback))return; this.shake = .18;
           }
         }
       } else if (effect.kind === 'oil') {

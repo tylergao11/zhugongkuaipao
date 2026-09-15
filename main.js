@@ -17,8 +17,8 @@ const troopSprites={lancer:0,shieldbearer:1,crossbowman:2,slinger:3};
 const images = {};
 let rigs = {};
 const slots = [], cards = new Map();
-let ready = false, portrait = innerHeight > innerWidth, previous = 0, accumulated = 0, uiClock = 0;
-let rotateFallback=false, rotated=false, loading=false, loadFailed=false;
+let ready = false, portrait = false, previous = 0, accumulated = 0, uiClock = 0;
+let rotated=false, loading=false, loadFailed=false;
 const loadedAssets = new Map();
 let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let soundEnabled = true, audio, soundTime = 0, toastUntil = 0, uiMode = '', speechUntil = 0, speech = '';
@@ -245,7 +245,7 @@ function updateUI() {
   const rightGateThreat=game.caozhangGateOpen;
   $('escape-label').textContent=game.liu.carrier ? rightGateThreat?'曹军清路押往长坂桥右门！':'曹军清路押送！截住扛人的！' : game.liu.dash>0?'刘备 · 脚底抹油！':gateActive?'刘备逃脱 · 右门已开':'刘备逃脱进度';
   for (const [type,{button,quality,skill,meter,fill}] of cards) {
-    const def=TYPES[type],unit=game.units.find(u=>u.type===type),deployed=def.unique&&!!unit;
+    const def=game.types[type],unit=game.units.find(u=>u.type===type),deployed=def.unique&&!!unit;
     button.classList.toggle('selected',game.selected===type);
     button.classList.toggle('unavailable',!game.canBuy(type));
     button.classList.toggle('locked',!game.isUnlocked(type));
@@ -262,7 +262,7 @@ function updateUI() {
     }else if(def.cooldown){
       const remaining=game.cooldowns[type]||0;
       button.classList.toggle('cooling',remaining>0);
-      skill.textContent=remaining>0?`冷却 ${Math.ceil(remaining)} 秒`:`冷却 ${def.cooldown} 秒`;
+      skill.textContent=remaining>0?`冷却 ${Math.ceil(remaining)} 秒`:`冷却 ${Math.round(def.cooldown*100)/100} 秒`;
       meter.hidden=remaining<=0;fill.style.width=`${(1-remaining/def.cooldown)*100}%`;
     }
   }
@@ -312,15 +312,6 @@ async function begin() {
   else { game.reset(profile.snapshot());setBattleSpeed(1); game.start();showLoadoutCards();say('我先探路，你们慢聊！',3);game.nextTalk=3;skillBannerUntil=0;impactPause=0;const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera(); }
   accumulated=0; previous=performance.now(); updateUI();
 }
-async function fullscreen() {
-  try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen({ navigationUI:'hide' }); } catch { /* Unsupported fullscreen still permits landscape play. */ }
-  try { if (screen.orientation?.lock) await screen.orientation.lock('landscape-primary'); } catch { /* The portrait gate is the browser-compatible fallback. */ }
-  updateViewport();
-  if(!document.fullscreenElement){
-    $('fullscreen-note').textContent='当前浏览器未进入全屏，可直接进入横向画面。';
-    if(!portrait)toast('当前浏览器不支持全屏，已按可用区域显示');
-  }
-}
 function pause() {
   if (game.mode==='running') { game.mode='paused'; updateUI(); }
   else if (game.mode==='paused') begin();
@@ -336,10 +327,7 @@ function setBattleSpeed(speed) {
 }
 $('start').addEventListener('click',()=>{if(loadFailed){void loadAssets();return;}if(game.mode==='paused'||$('overlay').classList.contains('loading-only'))void begin();else camp.open(['won','lost'].includes(game.mode)?'deck':'chest');});
 $('battle-speed').addEventListener('click',()=>{if(game.mode==='running')setBattleSpeed(battleSpeed===1?2:1);});
-$('fullscreen').addEventListener('click',fullscreen);
 $('haptics').addEventListener('click',()=>{hapticsEnabled=!hapticsEnabled;$('haptics').classList.toggle('active',hapticsEnabled);$('haptics').setAttribute('aria-label',hapticsEnabled?'关闭震感':'开启震感');if(!hapticsEnabled){impactPause=0;if(navigator.vibrate)navigator.vibrate(0);}});
-$('rotate-fullscreen').addEventListener('click',fullscreen);
-$('rotate-play').addEventListener('click',()=>{rotateFallback=true;updateViewport();});
 function updateSoundButton() {
   $('sound').classList.toggle('active',soundEnabled);$('sound').textContent=soundEnabled?'♫':'♪';
   $('sound').setAttribute('aria-label',soundEnabled?'关闭音乐与音效':'开启音乐与音效');
@@ -385,12 +373,11 @@ document.addEventListener('visibilitychange',()=>{
 function updateViewport() {
   const viewport=window.visualViewport;
   const width=viewport?.width||innerWidth, height=viewport?.height||innerHeight;
-  const nextRotated=height>width&&rotateFallback;
+  const nextRotated=height>width;
   const changed=rotated!==nextRotated;
-  rotated=nextRotated; portrait=height>width&&!rotated;
+  rotated=nextRotated; portrait=false;
   if(drag)clearDrag();stopPan();closeUnitMenu();
   if((portrait||changed)&&game.mode==='running')game.mode='paused';
-  document.body.classList.toggle('rotate-needed',portrait);
   document.body.classList.toggle('virtual-landscape',rotated);
   const safe=getComputedStyle($('safe-area'));
   const left=parseFloat(safe.paddingLeft)||0,right=parseFloat(safe.paddingRight)||0,top=parseFloat(safe.paddingTop)||0,bottom=parseFloat(safe.paddingBottom)||0;
@@ -409,7 +396,6 @@ window.addEventListener('resize',updateViewport);
 window.visualViewport?.addEventListener('resize',updateViewport);
 window.visualViewport?.addEventListener('scroll',updateViewport);
 screen.orientation?.addEventListener('change',updateViewport);
-document.addEventListener('fullscreenchange',updateViewport);
 window.addEventListener('pageshow',updateViewport);
 document.addEventListener('keydown',event=>{
   if (event.code==='Space' && event.target===document.body) { event.preventDefault(); pause(); }
@@ -832,9 +818,9 @@ async function loadAssets(){
   files.push(['military-pay','assets/game/military-pay-v1.svg',1800]);
   files.push(...BATTLE_POPUP_ASSETS);
   const received=new Map(),total=files.reduce((n,f)=>n+f[2],0);
-  const status=message=>{$('load-status').textContent=message;$('rotate-load-status').textContent=message;};
+  const status=message=>{$('load-status').textContent=message;};
   let highWater=0;
-  const setProgress=value=>{$('load-progress').value=value;$('rotate-load-progress').value=value;status(`${value}%`);};
+  const setProgress=value=>{$('load-progress').value=value;status(`${value}%`);};
   const progress=()=>{
     const amount=files.reduce((n,[key,,size])=>n+Math.min(size,received.get(key)||0),0);
     highWater=Math.max(highWater,Math.min(94,Math.floor(amount/total*94)));

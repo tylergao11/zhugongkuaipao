@@ -45,16 +45,24 @@ export const STARTER_COINS=120;
 export const MAX_UNIT_LEVEL=10;
 export const UNIT_UPGRADE_COSTS=[30,45,65,90,120,155,195,240,290];
 export function normalizeUnitLevel(value){return Number.isFinite(value)?Math.max(1,Math.min(MAX_UNIT_LEVEL,Math.floor(value))):1;}
+export const MAX_TRAINING_LEVEL=10;
+export const TRAINING_COSTS=[30,45,65,90,120,155,195,240,290,350];
+export const TRAINING_LABELS={cooldown:'冷却缩减',income:'军饷获取'};
+export const normalizeTraining=value=>Number.isFinite(value)?Math.max(0,Math.min(MAX_TRAINING_LEVEL,Math.floor(value))):0;
+export function trainingPaths(id){
+  if(!DECK_CARDS.includes(id))return [];
+  return [...(!['barricade','snare'].includes(id)?['cooldown']:[]),'income'];
+}
 const LEGACY_KEY='zhugong-liubei-camp-v1';
 const number=(v,max)=>Number.isFinite(v)?Math.max(0,Math.min(max,Math.floor(v))):0;
 export class CampProfile {
   constructor(storage,themeId=LIUBEI_THEME.id){
     this.themeId=themeId;this.key=`zhugong-theme-${themeId}-v1`;this.persistent=true;
     try{this.storage=storage??globalThis.localStorage;}catch{this.persistent=false;}
-    this.data={coins:STARTER_COINS,starterGiftClaimed:true,wins:0,medals:[false,false,false],armory:[],fitted:{},unitLevels:{},deck:[...DEFAULT_DECK],claims:[],chests:0};
+    this.data={coins:STARTER_COINS,starterGiftClaimed:true,wins:0,medals:[false,false,false],armory:[],fitted:{},unitLevels:{},training:{},incomeLevel:0,deck:[...DEFAULT_DECK],claims:[],chests:0};
     try{
       const raw=JSON.parse(this.storage?.getItem(this.key)||(themeId===LIUBEI_THEME.id?this.storage?.getItem(LEGACY_KEY):null)||'null');
-      if([1,2,3,4].includes(raw?.version)){
+      if([1,2,3,4,5].includes(raw?.version)){
         this.data.coins=number(raw.coins,1000000)+(raw.starterGiftClaimed===true?0:STARTER_COINS);this.data.wins=number(raw.wins,1000000);this.data.chests=number(raw.chests,1000000);
         this.data.medals=[0,1,2].map(i=>raw.medals?.[i]===true);
         const seen=new Set();
@@ -75,15 +83,32 @@ export class CampProfile {
         if(raw.version>=4){
           for(const id of DECK_CARDS)if(this.ownsCard(id))this.data.unitLevels[id]=normalizeUnitLevel(raw.unitLevels?.[id]);
         }
+        if(raw.version>=5){
+          this.data.incomeLevel=normalizeTraining(raw.incomeLevel);
+          for(const id of DECK_CARDS)if(this.ownsCard(id))this.data.training[id]=Object.fromEntries(trainingPaths(id).filter(path=>path!=='income').map(path=>[path,normalizeTraining(raw.training?.[id]?.[path])]));
+        }
         this.data.claims=Array.isArray(raw.claims)?raw.claims.filter(s=>typeof s==='string').slice(-100):[];
       }
-      if(raw===null||([1,2,3,4].includes(raw?.version)&&(raw.version<4||raw.starterGiftClaimed!==true)))this.save();
+      if(raw===null||([1,2,3,4,5].includes(raw?.version)&&(raw.version<5||raw.starterGiftClaimed!==true)))this.save();
     }catch{this.persistent=false;}
   }
-  save(){try{if(!this.storage)throw Error('unavailable');this.storage.setItem(this.key,JSON.stringify({version:4,themeId:this.themeId,...this.data}));this.persistent=true;}catch{this.persistent=false;}return this.persistent;}
+  save(){try{if(!this.storage)throw Error('unavailable');this.storage.setItem(this.key,JSON.stringify({version:5,themeId:this.themeId,...this.data}));this.persistent=true;}catch{this.persistent=false;}return this.persistent;}
   ownedLoot(key){return this.data.armory.find(i=>i.key===key);}
   ownsCard(id){return DECK_CARDS.includes(id)&&(DEFAULT_DECK.includes(id)||this.data.armory.some(i=>i.id===id));}
   unitLevel(id){return normalizeUnitLevel(this.data.unitLevels[id]);}
+  trainingLevel(id,path){return normalizeTraining(path==='income'?this.data.incomeLevel:this.data.training[id]?.[path]);}
+  trainingFor(id){return Object.fromEntries(trainingPaths(id).filter(path=>path!=='income').map(path=>[path,this.trainingLevel(id,path)]));}
+  trainingCost(id,path){const level=this.trainingLevel(id,path);return level<MAX_TRAINING_LEVEL?TRAINING_COSTS[level]:null;}
+  train(id,path){
+    if(!this.ownsCard(id)||!trainingPaths(id).includes(path))return false;
+    const cost=this.trainingCost(id,path);
+    if(cost===null||this.data.coins<cost)return false;
+    const level=this.trainingLevel(id,path)+1;
+    this.data.coins-=cost;
+    if(path==='income')this.data.incomeLevel=level;
+    else {this.data.training[id]||={};this.data.training[id][path]=level;}
+    this.save();return true;
+  }
   upgradeCost(id){const level=this.unitLevel(id);return level<MAX_UNIT_LEVEL?UNIT_UPGRADE_COSTS[level-1]:null;}
   upgradeUnit(id){
     if(!this.ownsCard(id))return {ok:false,reason:'locked'};
@@ -107,7 +132,8 @@ export class CampProfile {
       bonuses[id]=def.kind==='weapon'?rarity.weaponBonus:rarity.deviceBonus;labels[id]=rarity.name;
     }
     const levels=Object.fromEntries(DECK_CARDS.filter(id=>this.ownsCard(id)).map(id=>[id,this.unitLevel(id)]));
-    return {themeId:this.themeId,unlocked:LOOT_ITEMS.filter(i=>i.kind!=='weapon'&&this.ownsCard(i.id)).map(i=>i.id),bonuses,labels,levels,deck:this.deployment()};
+    const training=Object.fromEntries(DECK_CARDS.filter(id=>this.ownsCard(id)).map(id=>[id,this.trainingFor(id)]));
+    return {themeId:this.themeId,unlocked:LOOT_ITEMS.filter(i=>i.kind!=='weapon'&&this.ownsCard(i.id)).map(i=>i.id),bonuses,labels,levels,training,incomeLevel:this.trainingLevel(null,'income'),deck:this.deployment()};
   }
   toggleCard(id){
     if(!this.ownsCard(id))return '还没抽到这张卡，先到宝箱库房开箱';

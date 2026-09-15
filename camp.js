@@ -1,5 +1,5 @@
-import {LOOT_ITEMS,RARITIES,DECK_CARDS,CHEST_COST,MAX_DECK_SIZE,MAX_UNIT_LEVEL} from './theme.js';
-import {TYPES,rangeLabel,unitStatsFor} from './engine.js';
+import {LOOT_ITEMS,RARITIES,DECK_CARDS,CHEST_COST,MAX_DECK_SIZE,MAX_TRAINING_LEVEL,TRAINING_LABELS,trainingPaths} from './theme.js';
+import {TYPES,GRID_SPACING,rangeLabel,unitStatsFor,militaryIncomeFor} from './engine.js';
 
 const KIND={weapon:'兵器',hero:'武将',troop:'兵种',device:'器械'};
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -117,22 +117,41 @@ export function createCamp(profile,onChanged,onLaunch,canLaunch,options={}){
   function stat(label,value){return '<div><dt>'+label+'</dt><dd>'+value+'</dd></div>';}
   const statNumber=value=>Math.round(value*100)/100;
   function unitStats(id,bonus=profile.snapshot().bonuses[id]||0){
-    const def=unitStatsFor(id,profile.unitLevel(id),bonus),more=(def.range?stat('射程',rangeLabel(def)):'')+(def.interval&&def.damage?stat('攻击间隔',def.interval+' 秒'):'')+(def.cooldown?stat('冷却',def.cooldown+' 秒'):'');
+    const def=unitStatsFor(id,profile.unitLevel(id),bonus,profile.trainingFor(id)),more=(def.range?stat('射程',rangeLabel(def)):'')+(def.interval&&def.damage?stat('攻击间隔',statNumber(def.interval)+' 秒'):'')+(def.cooldown?stat('冷却',statNumber(def.cooldown)+' 秒'):'')+(def.stunDuration?stat('眩晕',statNumber(def.stunDuration)+' 秒'):'')+(def.slowDuration?stat('减速',statNumber(def.slowDuration)+' 秒'):'')+(def.knockback?stat('击退',statNumber(def.knockback/GRID_SPACING)+' 格'):'');
     return '<dl class="camp-stats">'+stat('军饷',def.cost)+(def.hp&&!def.trap?stat('生命',def.hp):'')+(def.damage?stat(def.instant&&id==='oil'?'每秒伤害':'伤害',statNumber(def.damage)):'')+(def.trap?stat('眩晕',statNumber(def.trapDuration)+' 秒'):'')+'</dl>'+(more?'<details class="unit-more"><summary>射程与冷却</summary><dl class="camp-stats">'+more+'</dl></details>':'');
   }
   function upgradePanel(id){
     if(!profile.ownsCard(id))return '';
-    const level=profile.unitLevel(id),cost=profile.upgradeCost(id),maxed=level>=MAX_UNIT_LEVEL,bonus=profile.snapshot().bonuses[id]||0;
-    const before=unitStatsFor(id,level,bonus),after=unitStatsFor(id,level+1,bonus),changes=[];
+    const paths=trainingPaths(id),selected=paths.includes(current()?.training)?current().training:paths[0];
+    const level=profile.trainingLevel(id,selected),cost=profile.trainingCost(id,selected),maxed=level>=MAX_TRAINING_LEVEL,bonus=profile.snapshot().bonuses[id]||0;
+    const training=profile.trainingFor(id),before=unitStatsFor(id,profile.unitLevel(id),bonus,training),after=unitStatsFor(id,profile.unitLevel(id),bonus,{...training,[selected]:level+1}),changes=[];
     const change=(label,from,to)=>'<span>'+label+' <b>'+statNumber(from)+'</b> <i>→</i> <em>'+statNumber(to)+'</em></span>';
-    if(before.hp&&!before.trap)changes.push(change('生命',before.hp,after.hp));
-    if(before.damage)changes.push(change('伤害',before.damage,after.damage));
-    if(before.trap)changes.push(change('眩晕（秒）',before.trapDuration,after.trapDuration));
-    return '<section class="unit-upgrade" aria-label="'+TYPES[id].name+'升级"><div class="upgrade-summary"><div class="upgrade-heading"><strong>'+level+' 级'+(maxed?'':' <i>→</i> '+(level+1)+' 级')+'</strong><span>金币 '+profile.data.coins+'</span></div><div class="upgrade-preview">'+(maxed?'<span>已达到最高等级</span>':changes.join(''))+'</div></div><button class="camp-action unit-upgrade-button" data-action="upgrade-unit" data-value="'+id+'" '+(maxed||profile.data.coins<cost?'disabled ':'')+'aria-label="'+(maxed?'已满级':'升级'+TYPES[id].name+'至'+(level+1)+'级，消耗'+cost+'金币')+'">'+(maxed?'已满级':'升级<small><span class="painted-coin" aria-hidden="true"></span>'+cost+'</small>')+'</button></section>';
+    if(selected==='income')changes.push(change('每秒军饷',militaryIncomeFor(level),militaryIncomeFor(level+1)));
+    else {
+      if(before.interval&&before.damage)changes.push(change('攻击间隔（秒）',before.interval,after.interval));
+      if(before.skillTime)changes.push(change('技能冷却（秒）',before.skillTime,after.skillTime));
+      if(before.cooldown)changes.push(change('使用冷却（秒）',before.cooldown,after.cooldown));
+    }
+    const scope=selected==='income'?'全军共享 · 每级 +5%':'当前单位 · 每级缩短 3%';
+    return '<section class="unit-upgrade" aria-label="金币强化"><div class="training-tabs">'+paths.map(path=>'<button data-action="training-path" data-value="'+path+'" aria-pressed="'+(path===selected)+'">'+TRAINING_LABELS[path]+'</button>').join('')+'</div><div class="upgrade-summary"><div class="upgrade-heading"><strong>'+level+' 级'+(maxed?'':' <i>→</i> '+(level+1)+' 级')+'</strong><span>金币 '+profile.data.coins+'</span></div><small>'+scope+'</small><div class="upgrade-preview">'+(maxed?'<span>已满级 · '+(selected==='income'?'每秒军饷 '+statNumber(militaryIncomeFor(level)):'冷却缩短 30%')+'</span>':changes.join(''))+'</div></div><button class="camp-action unit-upgrade-button" data-action="train-unit" data-value="'+selected+'" '+(maxed||profile.data.coins<cost?'disabled ':'')+'aria-label="'+(maxed?'已满级':'强化'+TRAINING_LABELS[selected]+'，消耗'+cost+'金币')+'">'+(maxed?'已满级':'强化<small><span class="painted-coin" aria-hidden="true"></span>'+cost+'</small>')+'</button></section>';
   }
   function cardDialog(d){
-    const def=TYPES[d.id],owned=profile.ownsCard(d.id),selected=profile.data.deck.includes(d.id),fitted=quality(d.id);
-    return {title:'武将与军备',body:'<div class="unit-portrait">'+icon(d.id)+'<span class="portrait-caption">'+(def.skill||role(d.id))+'</span></div><div class="unit-parchment"'+scrollAttrs('unit:'+d.id)+'><span class="camp-eyebrow">'+role(d.id)+' · '+(owned?'已拥有':'宝箱解锁')+'</span><h3 class="unit-title">'+def.name+'</h3>'+upgradePanel(d.id)+(def.skill?'<div class="camp-note"><strong>'+def.skill+'</strong><p>每 '+def.skillTime+' 秒自动施放</p></div>':'')+unitStats(d.id)+'<div class="unit-equipped">'+(fitted?'当前装配 · '+rarityOf(fitted.rarity).name:'基础配备')+(profile.bestLoot(d.id)?'<button class="camp-text-action" data-action="gear" data-value="'+d.id+'">查看 / 装卸 ›</button>':'')+'</div></div>',footer:owned?action(selected?'卸下出征':replacing?'换入阵容':'带上出征','toggle-card',d.id)+(selected?action('换个兄弟','choose',d.id,true):action('返回','back','',true)):action('前往开箱','goto-chest')+action('返回','back','',true)};
+    const def=unitStatsFor(d.id,profile.unitLevel(d.id),profile.snapshot().bonuses[d.id]||0,profile.trainingFor(d.id)),owned=profile.ownsCard(d.id),selected=profile.data.deck.includes(d.id);
+    return {title:'武将与军备',body:'<div class="unit-portrait">'+icon(d.id)+'<span class="portrait-caption">'+(def.skill||role(d.id))+'</span></div><div class="unit-parchment"'+scrollAttrs('unit:'+d.id)+'><span class="camp-eyebrow">'+role(d.id)+' · '+(owned?'已拥有':'宝箱解锁')+'</span><h3 class="unit-title">'+def.name+'</h3>'+upgradePanel(d.id)+(def.skill?'<div class="camp-note"><strong>'+def.skill+'</strong><p>每 '+statNumber(def.skillTime)+' 秒自动施放</p></div>':'')+unitStats(d.id)+equipmentPanel(d.id)+'</div>',footer:owned?action(selected?'卸下出征':replacing?'换入阵容':'带上出征','toggle-card',d.id)+(selected?action('换个兄弟','choose',d.id,true):action('返回','back','',true)):action('前往开箱','goto-chest')+action('返回','back','',true)};
+  }
+  function equipmentPanel(id){
+    const item=itemOf(id);if(!item||!profile.ownsCard(id))return '';
+    const fitted=quality(id),choices=RARITIES.filter(r=>profile.ownedLoot(id+':'+r.id)),def=TYPES[id];
+    const effect=bonus=>{
+      if(!bonus)return '基础属性';
+      const affected=[];if(def.damage)affected.push('伤害');if(['zhangfei','zhugeliang','snare'].includes(id))affected.push('控制');
+      return affected.join('、')+' +'+Math.round(bonus*100)+'%';
+    };
+    const cards=choices.map(r=>{
+      const selected=fitted?.rarity===r.id,key=id+':'+r.id;
+      return '<button class="inline-gear '+(selected?'is-equipped':'')+'" data-action="equip-inline" data-value="'+key+'" aria-pressed="'+selected+'" aria-label="'+(selected?'卸下':'装配')+r.name+item.name+'" style="--gear-color:'+r.color+'">'+icon(id)+'<span class="inline-gear-info"><strong>'+item.name+' <small>'+r.name+'</small></strong><span>'+effect(bonusOf(item,r))+'</span></span><span class="inline-gear-state">'+(selected?'<b>✓ 已装配</b><small>点击卸下</small>':'装配')+'</span></button>';
+    }).join('');
+    return '<section class="unit-equipment" aria-label="'+def.name+'的装配"><header><h4>装配</h4><span>'+(fitted?rarityOf(fitted.rarity).name+' · 已生效':'未装配')+'</span></header><div class="inline-gear-list">'+(cards||'<div class="inline-gear-empty">'+icon(id)+'<span>暂无'+(item.kind==='weapon'?'兵器':'可选品质')+'</span><button class="camp-text-action" data-action="goto-chest">开宝箱 ›</button></div>')+'</div></section>';
   }
   function gearDialog(d){
     const item=itemOf(d.id),fitted=quality(d.id),loot=profile.ownedLoot(d.key)||fitted||profile.bestLoot(d.id),rarity=rarityOf(loot.rarity),selected=fitted?.key===loot.key;
@@ -145,7 +164,7 @@ export function createCamp(profile,onChanged,onLaunch,canLaunch,options={}){
     return {title:drop.duplicate?'重复战利品':'获得新战利品',body:'<div class="camp-reveal" style="--loot-color:'+r.color+'"><div class="reveal-rays" aria-hidden="true"></div>'+icon(drop.item.id)+'<span class="reveal-rarity">'+r.name+' · '+KIND[drop.item.kind]+'</span><h3>'+drop.item.name+'</h3><strong>'+(drop.duplicate?'已返还 '+drop.refund+' 金币':'已收入库房')+'</strong></div>',footer:drop.duplicate?action('收下','collect')+action('再开一个 · '+CHEST_COST,'open-chest','',true,profile.data.coins<CHEST_COST):action(showGear?'查看装配':'加入编队','use-drop')+action('收下','collect','',true)};
   }
   function settingsDialog(){
-    return {title:'设置',body:'<div class="camp-reading settings-reading">'+[['sound','音乐与音效'],['haptics','震感'],['fullscreen','全屏']].map(([id,label])=>'<button class="camp-setting-row" data-action="setting" data-value="'+id+'"><span>'+label+'</span><b>'+(id==='fullscreen'?'切换 ›':document.getElementById(id).classList.contains('active')?'开':'关')+'</b></button>').join('')+'</div>',footer:action('回大营','back')};
+    return {title:'设置',body:'<div class="camp-reading settings-reading">'+[['sound','音乐与音效'],['haptics','震感']].map(([id,label])=>'<button class="camp-setting-row" data-action="setting" data-value="'+id+'"><span>'+label+'</span><b>'+(document.getElementById(id).classList.contains('active')?'开':'关')+'</b></button>').join('')+'</div>',footer:action('回大营','back')};
   }
   function dialogHTML(){
     const d=current();if(!d)return '';
@@ -198,9 +217,12 @@ export function createCamp(profile,onChanged,onLaunch,canLaunch,options={}){
     else if(a==='back')back();
     else if(a==='collect'){dialogs=[];render();}
     else if(a==='goto-chest')go('chest');
-    else if(a==='upgrade-unit'){
-      const result=profile.upgradeUnit(v);
-      if(result.ok){commit();root.querySelector('.unit-upgrade')?.classList.add('just-upgraded');}
+    else if(a==='training-path'){
+      if(current()?.kind==='card'&&trainingPaths(current().id).includes(v)){current().training=v;render();}
+    }
+    else if(a==='train-unit'){
+      if(current()?.kind!=='card')return;
+      if(profile.train(current().id,v)){commit();root.querySelector('.unit-upgrade')?.classList.add('just-upgraded');}
       else render();
     }
     else if(a==='remove-card'){
@@ -213,6 +235,10 @@ export function createCamp(profile,onChanged,onLaunch,canLaunch,options={}){
       else addToDeck(v);
     }else if(a==='replace'){
       const id=current().id,message=profile.replaceCard(v,id);if(message)toast(message);else{dialogs=[];page='deck';commit('已换上 '+TYPES[id].name);}
+    }else if(a==='equip-inline'){
+      const loot=profile.ownedLoot(v);
+      if(!loot||current()?.kind!=='card'||current().id!==loot.id)return;
+      if(profile.equipLoot(v))commit();
     }else if(a==='equip'){
       const loot=profile.ownedLoot(v),wasFitted=profile.data.fitted[loot.id]===v;
       if(profile.equipLoot(v)){dialogs.pop();commit(wasFitted?'已卸下':'已装配');}

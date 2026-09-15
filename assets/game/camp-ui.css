@@ -80,8 +80,28 @@
 #camp .painted-camp .camp-stats>div{padding:0 6px;border:0;border-left:1px solid #987c5355;border-radius:0;background:none}
 #camp .painted-camp .camp-stats dt{color:#806745;font-size:clamp(11px,1cqw,15px);margin-bottom:1px}
 #camp .painted-camp .camp-stats dd{color:#302b20;font:700 clamp(18px,2cqw,29px)/1.2 KaiTi,STKaiti,serif}
-#camp .painted-camp .unit-equipped{font-size:clamp(12px,1cqw,16px);color:#806342;border-top:1px solid #a0855e44;padding-top:7px}
+#camp .painted-camp .unit-equipment{margin-top:14px;padding-top:12px;border-top:1px solid #a0855e66}
+#camp .painted-camp .unit-equipment>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+#camp .painted-camp .unit-equipment h4{margin:0;color:#543717;font:900 clamp(21px,2cqw,29px)/1.2 KaiTi,STKaiti,serif}
+#camp .painted-camp .unit-equipment>header>span{font-size:clamp(11px,1cqw,15px);color:#826036}
+#camp .painted-camp .inline-gear-list{display:grid;gap:8px}
+#camp .painted-camp .inline-gear{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:9px;width:100%;min-height:68px;padding:9px 11px;border:1px solid #a78148;border-radius:5px;background:#e8d3a775;color:#563a22;text-align:left;box-shadow:inset 0 0 0 2px #fff5d33d}
+#camp .painted-camp .inline-gear.is-equipped{border:2px solid #aa7525;padding:8px 10px;background:linear-gradient(105deg,#e7c36b77,#f6e5b66b);box-shadow:inset 0 0 0 2px #fff3b999}
+#camp .painted-camp .inline-gear>.camp-icon{width:44px;height:44px;flex:none;filter:drop-shadow(0 2px 1px #39281255)}
+#camp .painted-camp .inline-gear-info{display:grid;gap:5px;min-width:0}
+#camp .painted-camp .inline-gear-info>strong{font:900 clamp(16px,1.55cqw,22px)/1.25 KaiTi,STKaiti,serif}
+#camp .painted-camp .inline-gear-info>strong>small{display:inline-block;vertical-align:middle;margin-left:3px;padding:2px 5px;border-radius:2px;background:#493520;color:var(--gear-color);font:700 10px/1.3 "Microsoft YaHei",sans-serif}
+#camp .painted-camp .inline-gear-info>span{color:#685438;font:clamp(11px,1.05cqw,15px)/1.3 "Microsoft YaHei",sans-serif}
+#camp .painted-camp .inline-gear-state{display:grid;gap:5px;justify-items:center;min-width:52px;color:#724515;font:900 clamp(15px,1.35cqw,20px)/1.2 KaiTi,STKaiti,serif;white-space:nowrap}
+#camp .painted-camp .inline-gear-state>b{color:#446037;font-size:clamp(12px,1.05cqw,16px)}
+#camp .painted-camp .inline-gear-state>small{color:#896a45;font:11px/1.2 "Microsoft YaHei",sans-serif}
+#camp .painted-camp .inline-gear-empty{display:flex;align-items:center;gap:10px;min-height:64px;color:#8b7555;font-size:13px}
+#camp .painted-camp .inline-gear-empty>.camp-icon{width:40px;height:40px;filter:grayscale(1);opacity:.4}
+#camp .painted-camp .inline-gear-empty>.camp-text-action{margin-left:auto}
 #camp .painted-camp .unit-upgrade{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin:10px 0 14px;padding:10px 0;border-top:1px solid #a5824b66;border-bottom:1px solid #a5824b66}
+#camp .painted-camp .training-tabs{grid-column:1/-1;display:flex;gap:6px;border-bottom:1px solid #a5824b44;padding-bottom:6px}
+#camp .painted-camp .training-tabs>button{flex:1;min-height:44px;padding:6px;border:1px solid transparent;border-radius:4px;background:transparent;color:#87643a;font-size:clamp(17px,1.6cqw,24px);font-weight:900}
+#camp .painted-camp .training-tabs>[aria-pressed=true]{border-color:#ab803f;background:#d6b36855;color:#49331b;box-shadow:inset 0 -2px #9c722d}
 #camp .painted-camp .upgrade-heading{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;margin-bottom:5px}
 #camp .painted-camp .upgrade-heading strong{color:#674722;font:900 clamp(17px,1.7cqw,25px)/1.2 KaiTi,STKaiti,serif}
 #camp .painted-camp .upgrade-heading>span,#camp .painted-camp .upgrade-summary>small{color:#806342;font-size:clamp(10px,.95cqw,14px)}

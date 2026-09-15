@@ -30,7 +30,7 @@
   <header class="hud">
     <h1>主公<span>快跑</span><small>刘备主题 · 长坂坡</small></h1>
     <div class="progress-box"><div class="progress-label"><span id="escape-label">护送刘备抵达出口</span><span id="progress-text">0%</span></div><div class="track"><div id="progress-fill"></div><span class="goal-flag">⚑</span></div></div>
-    <div class="hud-actions"><button id="haptics" class="square active" aria-label="关闭震感" title="震感">震</button><button id="sound" class="square active" aria-label="关闭音乐与音效" aria-pressed="true" title="音乐与音效">♫</button><button id="fullscreen" class="square" aria-label="进入全屏" title="全屏">⛶</button><button id="battle-speed" class="square" aria-label="当前正常速度，切换 2 倍速" aria-pressed="false" title="开启 2 倍速">1×</button></div>
+    <div class="hud-actions"><button id="haptics" class="square active" aria-label="关闭震感" title="震感">震</button><button id="sound" class="square active" aria-label="关闭音乐与音效" aria-pressed="true" title="音乐与音效">♫</button><button id="battle-speed" class="square" aria-label="当前正常速度，切换 2 倍速" aria-pressed="false" title="开启 2 倍速">1×</button></div>
   </header>
   <div class="battle-readout"><span id="kill-count">击退 0</span><span id="enemy-count">追兵 0</span></div>
   <div id="impact-flash" aria-hidden="true"></div>
@@ -54,7 +54,6 @@
   </section>
   <section id="camp" class="overlay" hidden aria-label="长坂大营，出征编队与宝箱库房"></section>
 </main>
-<section id="rotate" aria-label="横屏提示"><div class="rotate-panel"><div class="phone-shape">↻</div><h2>横屏开玩</h2><div id="rotate-load-status" role="status">0%</div><progress id="rotate-load-progress" max="100" value="0" aria-label="场景与音乐加载进度"></progress><button id="rotate-play" class="primary">进入横屏</button><button id="rotate-fullscreen" class="text-button">全屏</button><p id="fullscreen-note" role="status"></p></div></section>
 <noscript>请启用 JavaScript 后开始游戏。</noscript>
 <script type="module" src="main.js"></script>
 </body>
