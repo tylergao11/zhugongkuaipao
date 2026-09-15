@@ -5,9 +5,11 @@ export const ENEMY_LIMIT = LIUBEI_THEME.waveTimes.length + LIUBEI_THEME.gateWave
 export const GRID_SPACING = 178;
 export const rangeLabel = def => def.range>=GRID_SPACING ? `${Math.round(def.range/GRID_SPACING*10)/10} 格` : def.range ? '近身' : '—';
 const STARTING_GOLD = 180;
-const GOLD_PER_SECOND = 4.2;
+const GOLD_PER_SECOND = 5;
 export const militaryIncomeFor=level=>GOLD_PER_SECOND*(1+normalizeTraining(level)*.05);
 export const ALLY_STAT_MULTIPLIER = 1.1;
+export const ALLY_COMBAT_MULTIPLIER = ALLY_STAT_MULTIPLIER*1.05;
+export const ENEMY_STAT_MULTIPLIER = .85;
 const ENEMY_HIT_RADIUS = 40;
 // Feet align to the painted floor surfaces in town-v1.webp (bottom to top).
 export const FLOOR_Y = [665, 433, 236];
@@ -31,19 +33,19 @@ export const TYPES = {
 // Share these calculations with unit details and upgrade previews.
 export function unitStatsFor(type,level=1,bonus=0,training={}){
   const def=TYPES[type],rank=normalizeUnitLevel(level),quality=Number.isFinite(bonus)?Math.max(0,Math.min(.5,bonus)):0;
-  const damageMultiplier=(1+quality+(rank-1)*.05)*ALLY_STAT_MULTIPLIER;
+  const damageMultiplier=(1+quality+(rank-1)*.05)*ALLY_COMBAT_MULTIPLIER;
   const controlMultiplier=(1+quality)*ALLY_STAT_MULTIPLIER,cooldownMultiplier=1-normalizeTraining(training.cooldown)*.03;
   return {...def,level:rank,damageMultiplier,cooldownMultiplier,damage:(def.damage||0)*damageMultiplier,
-    hp:def.hp?(def.trap?def.hp*ALLY_STAT_MULTIPLIER:Math.round(def.hp*(1+(rank-1)*.06)*ALLY_STAT_MULTIPLIER)):def.hp,
+    hp:def.hp?(def.trap?def.hp*ALLY_COMBAT_MULTIPLIER:Math.round(def.hp*(1+(rank-1)*.06)*ALLY_COMBAT_MULTIPLIER)):def.hp,
     interval:def.interval?def.interval*cooldownMultiplier:undefined,
     skillTime:def.skillTime?def.skillTime*cooldownMultiplier:undefined,
     cooldown:def.cooldown?def.cooldown*cooldownMultiplier:undefined,
     stunDuration:type==='zhangfei'?1.5*controlMultiplier:undefined,
     slowDuration:type==='zhugeliang'?2.5*controlMultiplier:undefined,
     knockback:type==='zhugeliang'?130*controlMultiplier:type==='log'?45*ALLY_STAT_MULTIPLIER:undefined,
-    trapDuration:def.trap?2.4*damageMultiplier:undefined};
+    trapDuration:def.trap?2.4*(1+quality+(rank-1)*.05)*ALLY_STAT_MULTIPLIER:undefined};
 }
-export const ENEMY_TYPES = {
+export const ENEMY_TYPES = Object.fromEntries(Object.entries({
   soldier: { name:'曹兵', hp:145, speed:74, damage:18, interval:1.1, color:'#d68b64', reward:12 },
   shield: { name:'锅盖校尉', hp:280, speed:56, damage:25, interval:1.35, color:'#e9c366', reward:20, skill:'铁壁举盾', help:'举盾减伤 · 怒吼破盾' },
   runner: { name:'草鞋飞贼', hp:115, speed:84, damage:13, interval:.9, color:'#ff985a', reward:14, skill:'加钱冲刺', help:'间歇冲刺 · 容易被震晕' },
@@ -51,7 +53,7 @@ export const ENEMY_TYPES = {
   airborne: { name:'油纸伞兵', hp:135, speed:72, damage:17, interval:1.05, color:'#8ddcda', reward:16, help:'空降后排 · 落点提前预警' },
   caohong: {name:'曹洪',hp:620,speed:66,damage:28,interval:1.15,color:'#f5ca70',reward:48,skill:'重金悬赏',boss:true},
   xiahou: {name:'夏侯惇',hp:820,speed:62,damage:38,interval:1.35,color:'#ff8b64',reward:60,skill:'蛮牛冲阵',boss:true}
-};
+}).map(([id,def])=>[id,{...def,hp:Math.round(def.hp*ENEMY_STAT_MULTIPLIER),damage:def.damage*ENEMY_STAT_MULTIPLIER}]));
 const points = [[65,665],[1400,665],[1300,433],[42,433],[160,236],[1370,236]];
 export const SEGMENTS = [];
 let length = 0;
@@ -157,7 +159,7 @@ export class Game {
     effect.s=this.liu.s;const p=locate(effect.s);effect.x=p.x;effect.y=p.y;effect.dir=p.dir;
     for(const enemy of this.enemies){
       if(enemy.hp<=0||enemy.airborne>0||Math.abs(enemy.s-effect.s)>250)continue;
-      enemy.guard=0;enemy.stun=2*ALLY_STAT_MULTIPLIER;enemy.dash=0;this.damage(enemy,90*ALLY_STAT_MULTIPLIER,'magic',true);
+      enemy.guard=0;enemy.stun=2*ALLY_STAT_MULTIPLIER;enemy.dash=0;this.damage(enemy,90*ALLY_COMBAT_MULTIPLIER,'magic',true);
     }
     if(this.liu.carrier){
       const carrier=this.enemies.find(e=>e.id===this.liu.carrier);
@@ -460,7 +462,7 @@ export class Game {
       if (e.moving) e.attack = 0;
       if (blocker) {
         if(e.charge>0){
-          this.hurtUnit(blocker,blocker.type==='barricade'?150:100);e.charge=0;e.exhausted=1.2;
+          this.hurtUnit(blocker,(blocker.type==='barricade'?150:100)*ENEMY_STAT_MULTIPLIER);e.charge=0;e.exhausted=1.2;
           this.effects.push({kind:'roar',x:p.x,y:p.y-35,color:'#f8875f',life:.55,maxLife:.55});this.event('impact',{heavy:true});continue;
         }
         e.facing=Math.sign(SLOTS[blocker.slot].x-p.x)||e.facing;
