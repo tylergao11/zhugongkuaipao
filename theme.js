@@ -1,3 +1,4 @@
+export const BATTLE_COIN_MULTIPLIER=3;
 export const LIUBEI_THEME = {
   id:'liubei', name:'刘备 · 长坂坡', faction:'仁义跑路团',
   story:'长坂坡上，曹军追来。刘备把“仁义”揣进怀里，把断后的事交给兄弟。守住三段退路，接住主公的求救，送他一路跑出包围。',
@@ -11,8 +12,8 @@ export const LIUBEI_THEME = {
     'shield','runner','soldier','drummer','shield','soldier','runner','shield','drummer','soldier','shield','runner','soldier','runner'
   ],
   commanders:[
-    {id:'caohong',name:'曹洪',at:.22,coins:35,skill:'重金悬赏',help:'赏金旗强化一名小兵的移动与扛人速度；击败曹洪额外获得 35 阵营金币。'},
-    {id:'xiahou',name:'夏侯惇',at:.55,coins:50,skill:'蛮牛冲阵',help:'红线蓄力后猛冲；控制可打断。击败夏侯惇额外获得 50 阵营金币。'},
+    {id:'caohong',name:'曹洪',at:.22,coins:35*BATTLE_COIN_MULTIPLIER,skill:'重金悬赏',help:'赏金旗强化一名小兵的移动与扛人速度；击败曹洪额外获得 105 阵营金币。'},
+    {id:'xiahou',name:'夏侯惇',at:.55,coins:50*BATTLE_COIN_MULTIPLIER,skill:'蛮牛冲阵',help:'红线蓄力后猛冲；控制可打断。击败夏侯惇额外获得 150 阵营金币。'},
     {id:'caozhang',name:'曹彰',at:.5,skill:'虎豹骑接应',help:'进度 50% 驻守第二层右门，后续地面援兵从此出场。敌军扛刘备到门口，立即失败。'}
   ]
 };
@@ -154,8 +155,9 @@ export class CampProfile {
     if(!['won','lost'].includes(game.mode)||!game.runId||game.themeId!==this.themeId||this.data.claims.includes(game.runId))return null;
     const won=game.mode==='won',first=won&&this.data.wins===0,earned=won?[true,game.captures===0,!game.guardUsed]:[false,false,false];
     const fresh=earned.map((v,i)=>v&&!this.data.medals[i]);
-    const base=won?60:game.bestProgress>=.25?Math.min(25,Math.floor(game.bestProgress*25)):0;
-    const bonus=first?120:0,medalCoins=fresh.filter(Boolean).length*15,paid=base+bonus+medalCoins,bossCoins=game.bossCoins||0,total=paid+bossCoins;
+    const base=(won?60:game.bestProgress>=.25?Math.min(25,Math.floor(game.bestProgress*25)):0)*BATTLE_COIN_MULTIPLIER;
+    // Boss coins have already been tripled and paid when the commander fell.
+    const bonus=first?120*BATTLE_COIN_MULTIPLIER:0,medalCoins=fresh.filter(Boolean).length*15*BATTLE_COIN_MULTIPLIER,paid=base+bonus+medalCoins,bossCoins=game.bossCoins||0,total=paid+bossCoins;
     this.data.coins+=paid;if(won)this.data.wins++;
     this.data.medals=this.data.medals.map((v,i)=>v||earned[i]);this.data.claims.push(game.runId);this.data.claims=this.data.claims.slice(-100);this.save();
     return{total,base,bonus,medalCoins,bossCoins,earned,first};
