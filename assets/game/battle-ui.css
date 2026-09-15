@@ -1,0 +1,43 @@
+/* Battle surfaces cut from the approved camp rendering, shared by DOM and canvas. */
+.hud{border-bottom:1px solid #96713c;background:linear-gradient(#21180ff5,#292116f2);box-shadow:0 2px 8px #120b0699}
+.progress-label,.battle-readout{color:#f4dfb1;text-shadow:0 2px 2px #21170f}
+.track{border:1px solid #b69458;background:#1b140f;box-shadow:inset 0 1px 2px #0009,0 1px #d0a26755}
+.track>div{background:#d5a44b url('camp-gold-v1.webp') center/100% 200%}
+.track.captured>div{background:linear-gradient(#faac63,#bb3e24)}
+.square,.view-tools button,#unit-menu button{background:url('camp-ivory-v1.webp') center/100% 100% no-repeat;border:0;border-radius:0;box-shadow:none;color:#49321b;text-shadow:none}
+.square.active,.view-tools button.active{background-image:url('camp-gold-v1.webp');color:#563216}
+.square:active,.view-tools button:active{transform:translateY(1px)}
+.square:disabled{opacity:.5}
+.toolbar{border-top:2px solid #94703d;background:linear-gradient(#32271bf7,#17120ef7);box-shadow:0 -3px 9px #0d090777}
+.purse{background:url('camp-brush-v1.webp') center/100% 110% no-repeat;padding:12px 2px;color:#f4dcaa}
+.purse .supply-icon{width:clamp(24px,2.8cqw,42px);height:clamp(24px,2.8cqw,42px);background:url('military-pay-v1.svg') center/contain no-repeat}
+.purse strong{font:900 clamp(23px,2.6cqw,43px)/1 KaiTi,STKaiti,serif;letter-spacing:.01em;color:#ffe5ad}
+.purse small{font:700 clamp(10px,1cqw,15px)/1.3 KaiTi,STKaiti,serif;letter-spacing:.18em;color:#cab17f}
+.card,.card-locked-slot{border:0;border-radius:0;background:url('camp-ivory-v1.webp') center/100% 100% no-repeat;box-shadow:none}
+.card .name,.card .cost{color:#3b2918;text-shadow:0 1px #fff3cc}
+.card .cost{padding-left:1.15em}
+.card .cost::before{content:"";position:absolute;left:0;top:-.05em;width:1em;height:1em;background:url('military-pay-v1.svg') center/contain no-repeat}
+.card.selected{background-image:url('camp-gold-v1.webp');outline:0;filter:drop-shadow(0 0 4px #ffc46b77)}
+.card.unavailable{filter:saturate(.55) brightness(.83)}
+.card .badge{padding:5px 4px 7px;background:url('camp-brush-v1.webp') center/100% 100% no-repeat;color:#fff0d0;writing-mode:vertical-rl;letter-spacing:1px;font-family:KaiTi,STKaiti,serif}
+.card .quality-badge{padding:4px 7px;border:0;border-radius:0;background:url('camp-brush-v1.webp') center/100% 100% no-repeat;color:var(--quality-color,#f1d9aa);font-family:KaiTi,STKaiti,serif}
+.card .skill-status{border:0;border-radius:0;background:url('camp-brush-v1.webp') center/100% 100% no-repeat;color:#ffdf9e;padding:3px 8px}
+.card .skill-meter{background:#6e503f55}.card .skill-meter i{background:#bc7b29}
+.card.skill-ready .skill-status{color:#ffe78e}
+.card.skill-ready{filter:drop-shadow(0 0 3px #f6c86566)}
+.card-locked-slot{opacity:.63;background-image:url('camp-ivory-v1.webp')}
+.card-slot-padlock{background:url('battle-lock-v1.webp') center/contain no-repeat;filter:sepia(.22) brightness(.76);opacity:.9}
+#guard{background-image:url('camp-gold-v1.webp');color:#432917}
+#view-gate{color:#9a2b1e;background-image:url('camp-ivory-v1.webp')}
+#unit-menu{background:url('camp-paper-v1.webp') center/100% 100% no-repeat;border:0;color:#49301d;padding:12px 16px;box-shadow:none}
+#unit-name{font:900 19px KaiTi,STKaiti,serif;color:#51361f}
+#toast,#skill-banner{background:url('camp-brush-v1.webp') center/100% 100% no-repeat;border:0;color:#ffe6b3;border-radius:0;padding:15px 28px}
+#gate-warning{background:url('camp-brush-v1.webp') center/100% 100% no-repeat;color:#ffdba2;padding:20px 38px;border:0;filter:drop-shadow(0 0 8px #8c160e99)}
+#gate-warning strong{color:#ffac72}
+#rotate{background:linear-gradient(#261b1488,#211710d9),url('camp-backdrop-v1.webp') center/cover}
+#rotate .rotate-panel{background:url('camp-paper-v1.webp') center/100% 100% no-repeat;border:0;border-radius:0;color:#563d23;padding:30px 24px;max-width:92vw}
+#rotate .rotate-panel h2,#rotate .rotate-panel p{color:#583f24;text-shadow:none}
+#rotate .primary,#rotate .text-button{background:url('camp-gold-v1.webp') center/100% 100% no-repeat;border:0;border-radius:0;color:#382816;font-family:KaiTi,STKaiti,serif;font-weight:900}
+#rotate .text-button{background-image:url('camp-ivory-v1.webp');font-size:16px}
+#game.compact .purse{padding:6px 0}#game.compact .purse strong{font-size:24px}#game.compact .purse .supply-icon{width:24px;height:24px}
+#game.compact .card .badge{padding:4px 2px 5px;font-size:8px;right:8%}#game.compact .card .quality-badge{font-size:8px;padding:3px 5px}

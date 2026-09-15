@@ -1,0 +1,167 @@
+/* Directly implements output/camp-ui-design-v1.png and the approved home render.
+   One flattened home painting; only live text and interactions are overlaid. */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#camp{background:#201b17;backdrop-filter:none}
+#camp .painted-camp{container-type:size;background:#201b17;color:#302419;--camp-muted:#756047;--camp-line:#84613e55;--loot-color:#765022;font:clamp(14px,1.2cqw,19px)/1.5 "Microsoft YaHei","PingFang SC",sans-serif}
+#camp .painted-camp .camp-base{display:flex;flex-direction:column;grid-template:none;height:100%;background:url('camp-backdrop-v1.webp') center/cover}
+#camp .painted-camp.page-chest .camp-base{background:none}
+#camp .painted-camp button{font-family:KaiTi,STKaiti,"Microsoft YaHei",serif;min-height:44px;transition:transform .12s,filter .12s}
+#camp .painted-camp button:focus-visible{outline:3px solid #ffe198;outline-offset:3px}
+#camp .painted-camp button:disabled{opacity:.55;pointer-events:none}
+#camp .painted-camp button.touch-pressed{filter:brightness(1.12);transform:scale(.97)}
+#camp .camp-home{height:100%;width:100%;display:grid;place-items:center;background:#191d20}
+#camp .home-artboard{position:relative;container-type:inline-size;width:100%;width:min(100%,calc(100cqh * 16 / 9));aspect-ratio:16/9;background:url('camp-home-v2.webp') center/100% 100% no-repeat}
+#camp .home-hit{position:absolute;padding:0;border:0;background:none;color:#171b13;box-shadow:none;border-radius:0;line-height:1.1}
+#camp .home-settings{left:92.7%;top:0;width:7.2%;height:12%;min-height:0!important}
+#camp .home-money{left:86.4%;top:3.4%;width:6.5%;height:4.2%;min-height:0!important;display:grid;place-items:center;text-align:center;line-height:1;color:#fff5d8;font-family:"Microsoft YaHei",sans-serif!important;font-size:clamp(12px,1.75cqw,30px);font-variant-numeric:tabular-nums}
+#camp .home-open{left:5.3%;top:50.7%;width:30.2%;height:15.7%;font-weight:900;font-size:clamp(20px,3.7cqw,62px);text-shadow:0 1px #fff2ae}
+#camp .home-open span{font-family:inherit;font-size:.82em}
+#camp .painted-camp [data-action="open-chest"]:disabled{color:#606060;opacity:1;filter:grayscale(1);text-shadow:0 1px #ffffff80}
+/* The home button's gold frame is painted into the scene behind its touch target. */
+#camp .painted-camp .home-open:disabled{-webkit-backdrop-filter:grayscale(1) brightness(.8);backdrop-filter:grayscale(1) brightness(.8);border-radius:10% / 22%}
+#camp .home-deck{left:6.7%;top:77.8%;width:27.7%;height:11.4%;display:grid;place-items:center;text-align:center;font-size:clamp(19px,2.9cqw,48px);font-weight:900}
+#camp .painted-camp .camp-topbar{height:clamp(58px,10cqh,90px);min-height:58px;padding:8px 3%;gap:14px;border:0;background:linear-gradient(#241b14b8,transparent);color:#fff0c8}
+#camp .painted-camp .camp-topbar h2{margin:0;font:900 clamp(27px,3.2cqw,50px)/1.1 KaiTi,STKaiti,serif;color:#fff0c8;text-shadow:2px 2px #21170f}
+#camp .painted-camp .camp-back{flex:none;width:clamp(42px,4.4cqw,66px);height:clamp(42px,4.4cqw,66px);min-height:42px;min-width:42px;border:0;border-radius:0;background:url('camp-back-v1.webp') center/contain no-repeat;color:transparent;padding:0}
+#camp .painted-camp .camp-money{display:flex;align-items:center;gap:8px;margin-left:auto;padding:2px 13px;color:#fff0c7;font-size:clamp(20px,2.2cqw,32px);background:#201810d9;border:1px solid #bca277;border-radius:20px}
+.painted-coin{display:inline-block;width:27px;height:27px;background:url('camp-coin-v1.webp') center/contain no-repeat}
+#camp .painted-camp .camp-content{display:flex;flex:1;min-height:0;width:min(1240px,94%);margin:0 auto;padding:0 0 2%;overflow:hidden;grid-area:auto}
+#camp .painted-camp .camp-view{width:100%;gap:12px}
+#camp .painted-camp .roster-heading{font-size:clamp(14px,1.6cqw,22px);padding:0 2%;color:#fff1cb;text-shadow:0 2px 3px #261f1a}
+#camp .painted-camp .roster-heading b{color:#ffe99c;margin-left:7px}
+#camp .painted-camp .roster-tray{display:flex;align-items:center;gap:clamp(7px,1.1cqw,18px);flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;padding:6px 1%;scroll-snap-type:x proximity}
+#camp .painted-camp .roster-slot{position:relative;display:flex;flex-direction:column;flex:1 0 0;min-width:100px;height:clamp(176px,53cqh,370px);max-height:100%;gap:0;padding:8% 1% 3%;border:0;border-radius:0;background:url('camp-card-v1.webp') center/100% 100% no-repeat;color:#292519;box-shadow:none;scroll-snap-align:start;overflow:hidden}
+#camp .painted-camp .roster-slot>strong{position:absolute;top:7%;left:4%;right:4%;font:900 clamp(17px,1.85cqw,29px)/1.2 KaiTi,STKaiti,serif;text-align:center;z-index:1}
+#camp .painted-camp .roster-slot .camp-icon{width:100%;height:auto;aspect-ratio:1;flex:none;margin:auto 0 0;filter:drop-shadow(0 5px 2px #32231244)}
+#camp .painted-camp .roster-slot>small{display:block;font-size:clamp(11px,1cqw,16px);margin:auto 0 8%;white-space:nowrap;color:#715c40}
+#camp .painted-camp .roster-slot i{left:10%;top:5%;font-size:10px;opacity:.45;color:#5b482e}
+#camp .painted-camp .roster-equipped>strong{top:max(7%,40px)}
+#camp .painted-camp .roster-details{position:absolute;inset:0;z-index:2;width:100%;height:100%;padding:0;border:0;border-radius:8px;background:none;box-shadow:none}
+#camp .painted-camp .roster-details:focus-visible{outline-offset:-6px}
+#camp .painted-camp .roster-remove{position:absolute;top:0;right:0;z-index:3;display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:50%;background:none;box-shadow:none}
+#camp .painted-camp .roster-remove>span{display:grid;place-items:center;width:28px;height:28px;border:1px solid #e6c58c;border-radius:50%;background:#7d3024;color:#fff0cf;box-shadow:0 2px 4px #24150b66;font:700 24px/1 Arial,sans-serif;text-shadow:0 1px #39150f}
+#camp .painted-camp .roster-equipped:has(.roster-details.touch-pressed){filter:brightness(1.1)}
+#camp .painted-camp .empty-slot{justify-content:center;opacity:.83;padding:15px 6px}
+#camp .painted-camp .empty-slot>span{font:300 clamp(32px,5cqw,72px)/1 sans-serif;max-width:none;color:#8e714d}
+#camp .painted-camp .empty-slot>small{margin:18px 0 0}
+#camp .painted-camp .deck-footer{display:flex;align-items:center;justify-content:flex-end;gap:32px;padding:0 1%;min-height:55px;flex-shrink:0}
+#camp .painted-camp .camp-action{min-height:50px;padding:12px 25px;border:0;border-radius:0;background:url('camp-gold-v1.webp') center/100% 100% no-repeat;box-shadow:none;color:#211b12;font:900 clamp(19px,2cqw,30px)/1.1 KaiTi,STKaiti,serif;white-space:nowrap;text-shadow:0 1px #fff4c0}
+#camp .painted-camp .camp-action.secondary{background-image:url('camp-ivory-v1.webp');color:#3c2b19;border:0;box-shadow:none}
+#camp .painted-camp .deck-footer>.camp-action{width:clamp(160px,24cqw,340px);min-height:clamp(52px,8cqh,74px);font-size:clamp(24px,2.8cqw,40px)}
+#camp .painted-camp .picker-view{background:url('camp-paper-v1.webp') center/100% 100% no-repeat;padding:2% 3% 3%;gap:12px}
+#camp .painted-camp .camp-filters{margin:0 auto;gap:0;min-height:44px;flex-shrink:0;border-bottom:1px solid #94724655;max-width:100%}
+#camp .painted-camp .camp-filters button{min-width:72px;font-size:clamp(14px,1.5cqw,22px);padding:7px 16px;background:none;border:0;border-radius:0;color:#745734}
+#camp .painted-camp .camp-filters [aria-pressed=true]{background:url('camp-brush-v1.webp') center/100% 100% no-repeat;color:#ffedc1;box-shadow:none}
+#camp .painted-camp .camp-catalog{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(110px,16cqw,195px),1fr));grid-auto-rows:clamp(175px,43cqh,285px);gap:clamp(9px,1.4cqw,20px);padding:3px 1% 15px;align-content:start;flex:1;min-height:0}
+#camp .painted-camp .camp-tile{display:flex;flex-direction:column;justify-content:center;gap:5px;min-height:0;padding:12px 8px 15px;border:0;border-radius:0;background:url('camp-card-v1.webp') center/100% 100% no-repeat;color:#34251a;overflow:hidden}
+#camp .painted-camp .camp-tile .camp-icon{width:100%;max-width:185px;height:auto;aspect-ratio:1;flex-shrink:1;min-height:0;margin:auto}
+#camp .painted-camp .camp-tile strong{font:900 clamp(19px,1.9cqw,28px)/1.1 KaiTi,STKaiti,serif}
+#camp .painted-camp .camp-tile small{color:#876740;font-size:clamp(11px,1cqw,15px)}
+#camp .painted-camp .camp-tile.is-carried{box-shadow:inset 0 0 0 3px #b88736;border-radius:8px}
+#camp .painted-camp .tile-tag{right:9%;top:5%;background:#7e3024;color:#fff0d0;border-radius:2px;writing-mode:vertical-rl;font-size:11px;letter-spacing:2px;padding:5px 3px}
+#camp .painted-camp .camp-tile.is-locked{color:#847b6a}
+#camp .painted-camp .camp-tile.is-locked .camp-icon{opacity:.45;filter:grayscale(1)}
+#camp .painted-camp .camp-layer{display:block;background:#2c241e;z-index:5}
+#camp .painted-camp .camp-sheet{display:flex;flex-direction:column;width:100%;height:100%;border:0;background:url('camp-backdrop-v1.webp') center/cover;box-shadow:none;animation:painted-page-in .18s ease-out}
+#camp .painted-camp .camp-sheet>header{min-height:58px;height:clamp(58px,10cqh,90px);padding:5px 3%;gap:14px;border:0;background:linear-gradient(#241b14cc,transparent);color:#fff0d4;flex-shrink:0}
+#camp .painted-camp .camp-sheet>header h3{font:900 clamp(23px,2.8cqw,40px)/1.1 KaiTi,STKaiti,serif;color:#fff0d0;text-shadow:1px 2px #2b2118}
+#camp .painted-camp .camp-sheet-body{flex:1;min-height:0;width:min(1100px,91%);margin:0 auto;padding:0;overflow-x:hidden}
+#camp .painted-camp .unit-sheet .camp-sheet-body{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1fr);gap:4%;overflow:hidden;padding:0}
+#camp .painted-camp .unit-portrait{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;min-width:0;min-height:0}
+#camp .painted-camp .unit-portrait .camp-icon{width:min(100%,58cqh);height:auto;aspect-ratio:1;filter:drop-shadow(0 12px 5px #18141266);animation:portrait-breathe 3.5s ease-in-out infinite}
+#camp .painted-camp .portrait-caption{font:900 clamp(17px,2.2cqw,30px) KaiTi,STKaiti,serif;color:#ffecb4;text-shadow:0 2px 4px #1a130d;margin-top:-4%;padding:10px 36px;background:url('camp-brush-v1.webp') center/100% 100% no-repeat}
+#camp .painted-camp .unit-parchment{width:100%;min-width:0;min-height:0;background:url('camp-paper-v1.webp') center/100% 100% no-repeat;padding:7% 9%;color:#342a1a}
+#camp .painted-camp .unit-title{font:900 clamp(32px,5cqw,70px)/1.1 KaiTi,STKaiti,serif;margin:4px 0 10px;color:#302419}
+#camp .painted-camp .camp-eyebrow{color:#896a42;font-size:clamp(11px,1.05cqw,16px);letter-spacing:2px}
+#camp .painted-camp .camp-note{border:0;border-top:1px solid #94714055;border-bottom:1px solid #94714055;border-radius:0;background:none;padding:9px 0;color:#393822}
+#camp .painted-camp .camp-note strong{font:900 clamp(19px,2cqw,29px) KaiTi,STKaiti,serif}
+#camp .painted-camp .camp-note p,#camp .painted-camp .camp-note p{color:#806342;font-size:clamp(12px,1.1cqw,17px);line-height:1.55;margin:6px 0 10px}
+#camp .painted-camp .camp-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:13px 0}
+#camp .painted-camp .camp-stats>div{padding:0 6px;border:0;border-left:1px solid #987c5355;border-radius:0;background:none}
+#camp .painted-camp .camp-stats dt{color:#806745;font-size:clamp(11px,1cqw,15px);margin-bottom:1px}
+#camp .painted-camp .camp-stats dd{color:#302b20;font:700 clamp(18px,2cqw,29px)/1.2 KaiTi,STKaiti,serif}
+#camp .painted-camp .unit-equipped{font-size:clamp(12px,1cqw,16px);color:#806342;border-top:1px solid #a0855e44;padding-top:7px}
+#camp .painted-camp .unit-upgrade{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin:10px 0 14px;padding:10px 0;border-top:1px solid #a5824b66;border-bottom:1px solid #a5824b66}
+#camp .painted-camp .upgrade-heading{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px;margin-bottom:5px}
+#camp .painted-camp .upgrade-heading strong{color:#674722;font:900 clamp(17px,1.7cqw,25px)/1.2 KaiTi,STKaiti,serif}
+#camp .painted-camp .upgrade-heading>span,#camp .painted-camp .upgrade-summary>small{color:#806342;font-size:clamp(10px,.95cqw,14px)}
+#camp .painted-camp .upgrade-preview{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:clamp(12px,1.1cqw,16px);line-height:1.5;color:#72593b}
+#camp .painted-camp .upgrade-preview span{white-space:nowrap}
+#camp .painted-camp .unit-upgrade i{font-style:normal;color:#a28a64}
+#camp .painted-camp .upgrade-preview em{font-style:normal;font-weight:700;color:#476333}
+#camp .painted-camp .unit-upgrade-button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:88px;min-height:62px;padding:9px 16px;font-size:clamp(19px,1.8cqw,27px)}
+#camp .painted-camp .unit-upgrade-button small{display:flex;align-items:center;gap:4px;font:700 clamp(12px,1.15cqw,17px)/1.1 "Microsoft YaHei",sans-serif}
+#camp .painted-camp .unit-upgrade-button .painted-coin{width:18px;height:18px}
+#camp .painted-camp .unit-upgrade-button:disabled{opacity:.75;filter:grayscale(1);color:#666;text-shadow:none}
+#camp .painted-camp .unit-upgrade.just-upgraded{animation:unit-upgrade-flash .5s ease-out}
+@keyframes unit-upgrade-flash{from{background:#edc46988;box-shadow:0 0 20px #edc46966}to{background:transparent;box-shadow:0 0 0 transparent}}
+@media(prefers-reduced-motion:reduce){#camp .painted-camp .unit-upgrade.just-upgraded{animation:none}}
+#camp .painted-camp .unit-more{font-size:clamp(12px,1cqw,16px);color:#806342;margin:5px 0}
+#camp .painted-camp .unit-more summary{cursor:pointer;padding:6px 0;min-height:32px}
+#camp .painted-camp .unit-portrait .camp-icon{position:absolute;bottom:7%;width:min(110%,78cqh);max-width:490px;flex:none}
+#camp .painted-camp .portrait-caption{position:absolute;bottom:0;z-index:1;margin:0}
+#camp .painted-camp .camp-text-action{color:#835122;font:700 clamp(14px,1.2cqw,19px) KaiTi,STKaiti,serif;background:none;border:0;padding:7px 0;min-height:40px}
+#camp .painted-camp .camp-sheet>footer{display:flex;align-items:center;justify-content:center;gap:18px;min-height:64px;padding:8px 4% 12px;border:0;background:none;flex-shrink:0}
+#camp .painted-camp .camp-sheet>footer>.camp-action{flex:0 1 260px;min-width:130px;max-width:300px;padding:12px 20px}
+#camp .painted-camp .camp-sheet>footer>.camp-action.secondary{flex:0 1 220px}
+#camp .painted-camp .unit-sheet>footer{justify-content:flex-end;width:min(1100px,91%);margin:auto;padding-left:49%;padding-right:0;gap:10px}
+#camp .painted-camp .camp-quality-picker{display:flex;gap:5px;margin:13px 0}
+#camp .painted-camp .camp-quality-picker button{border:1px solid #92714255;background:#b78a3820;border-radius:2px;color:#795a33;padding:6px 8px;font-size:clamp(14px,1.35cqw,20px)}
+#camp .painted-camp .camp-quality-picker button small{color:#937048;font-size:10px}
+#camp .painted-camp .camp-quality-picker [aria-pressed=true]{border:2px solid #a87522;background:#e3ba6255;color:#312c1e}
+#camp .painted-camp .camp-comparison{color:#806440;border-color:#92714255;font-size:14px;padding:8px 0}
+#camp .painted-camp .camp-comparison strong{color:#4f522d;font-size:23px}
+#camp .painted-camp .camp-comparison i{color:#93724a;padding:0 8px}
+#camp .painted-camp .reading-sheet .camp-sheet-body{width:min(860px,86%);background:url('camp-paper-v1.webp') center/100% 100% no-repeat;padding:3% 5%;color:#59432c}
+#camp .painted-camp .camp-reading{color:#6a5035;font-size:clamp(14px,1.3cqw,20px);line-height:1.7}
+#camp .painted-camp .camp-replacement{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:220px}
+#camp .painted-camp .camp-setting-row{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 0;border:0;border-bottom:1px solid #a5824b55;background:none;color:#4d3c27;font-size:clamp(20px,2.4cqw,30px)}
+#camp .painted-camp .camp-setting-row b{color:#87612b;font-size:.8em}
+#camp .painted-camp .opening-sheet,#camp .painted-camp .reveal-sheet{background:radial-gradient(ellipse at center,#fff0b433,#2e23153b),url('camp-backdrop-v1.webp') center/cover}
+#camp .painted-camp .camp-chest-art{position:relative;display:grid;place-items:center;min-height:0;width:clamp(230px,38cqw,510px);aspect-ratio:1.35;isolation:isolate}
+#camp .painted-camp .painted-chest{position:relative;width:100%;height:auto;filter:drop-shadow(0 16px 7px #291b1377);transform-origin:50% 85%;z-index:1}
+#camp .painted-camp .chest-aura{position:absolute;width:150%;height:150%;inset:-25%;border-radius:50%;background:radial-gradient(#ffe884a6,transparent 67%);z-index:0}
+#camp .painted-camp .camp-opening{justify-content:center;gap:0}
+#camp .painted-camp .camp-opening .painted-chest{animation:painted-chest-open 1.4s ease-in both}
+#camp .painted-camp .camp-opening .chest-aura{animation:painted-chest-light 1.4s ease-in both}
+#camp .painted-camp .chest-glint{position:absolute;z-index:2;color:#fff9cb;text-shadow:0 0 15px #ffd570;font-size:48px;font-style:normal;animation:chest-glint 1s ease-in-out infinite}
+#camp .painted-camp .glint-one{left:4%;top:24%}.glint-two{right:1%;top:7%;animation-delay:.4s!important}
+#camp .painted-camp .camp-skip{color:#fff1d2;font-size:15px;right:3%;top:3%;text-shadow:0 1px 3px #211a12}
+#camp .painted-camp .reveal-sheet .camp-sheet-body{display:grid;place-items:center;overflow:visible}
+#camp .painted-camp .camp-reveal{display:flex;position:relative;flex-direction:column;justify-content:center;gap:4px;width:clamp(220px,30cqw,420px);max-width:90%;height:100%;max-height:530px;min-height:0;isolation:isolate;background:url('camp-card-v1.webp') center/100% 100% no-repeat;padding:18px 20px 22px;animation:painted-reward-in .42s cubic-bezier(.2,.7,.3,1.1)}
+#camp .painted-camp .camp-reveal>.camp-icon{width:min(100%,36cqh);height:auto;aspect-ratio:1;flex-shrink:1;min-height:0;margin:0 auto;filter:drop-shadow(0 5px 8px #af741644)}
+#camp .painted-camp .camp-reveal>.reveal-rarity{font:900 clamp(14px,1.5cqw,22px) KaiTi,STKaiti,serif;letter-spacing:3px;color:#945b24}
+#camp .painted-camp .camp-reveal h3{font:900 clamp(25px,3.8cqw,52px)/1.1 KaiTi,STKaiti,serif;color:#332419;margin:2px 0;text-align:center}
+#camp .painted-camp .camp-reveal>strong{color:#80632e;font-size:clamp(12px,1cqw,16px);text-align:center;padding:0}
+#camp .painted-camp .reveal-rays{inset:-25%;background:repeating-conic-gradient(from 0deg,transparent 0deg 18deg,#ffdd77a6 20deg 25deg);mask-image:radial-gradient(#000,transparent 68%);animation:reward-rays 18s linear infinite;z-index:-1}
+#camp .painted-camp .camp-feedback{bottom:15%;border:0;border-radius:0;padding:20px 38px;background:url('camp-brush-v1.webp') center/100% 100% no-repeat;color:#ffebbf;box-shadow:none;font-size:clamp(14px,1.45cqw,21px);max-width:90%}
+#camp .painted-camp [inert]{visibility:hidden}
+@keyframes painted-page-in{from{opacity:.6;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes portrait-breathe{0%,100%{transform:translateY(0) rotate(-.4deg)}50%{transform:translateY(-3px) rotate(.4deg)}}
+@keyframes painted-chest-open{0%,15%{transform:rotate(0)}25%{transform:rotate(-5deg)}35%{transform:rotate(5deg)}45%{transform:rotate(-7deg)}55%{transform:rotate(7deg)}70%{transform:translateY(-10px) scale(1.06)}90%{transform:scale(1.14);filter:brightness(1.8)}100%{transform:scale(1.3);opacity:0;filter:brightness(3)}}
+@keyframes painted-chest-light{0%{opacity:.3;transform:scale(.6)}75%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:scale(2)}}
+@keyframes chest-glint{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1)}}
+@keyframes painted-reward-in{from{opacity:0;transform:scale(.75) translateY(15px)}to{opacity:1;transform:none}}
+@keyframes reward-rays{to{transform:rotate(360deg)}}
+@container (max-height:420px){
+ #camp .painted-camp .camp-topbar,#camp .painted-camp .camp-sheet>header{height:52px;min-height:52px}
+ #camp .painted-camp .camp-content{padding-bottom:8px}
+ #camp .painted-camp .camp-view{gap:6px}
+ #camp .painted-camp .roster-slot{height:clamp(165px,54cqh,230px);padding-top:6%}
+ #camp .painted-camp .roster-slot>strong{font-size:19px}
+ #camp .painted-camp .roster-slot .camp-icon{width:min(100%,33cqh)}
+ #camp .painted-camp .deck-footer{min-height:48px}
+ #camp .painted-camp .deck-footer>.camp-action{min-height:48px;padding:9px 20px}
+ #camp .painted-camp .camp-sheet>footer{min-height:56px;padding-top:5px;padding-bottom:5px}
+ #camp .painted-camp .camp-action{min-height:46px;padding:10px 15px;font-size:20px}
+ #camp .painted-camp .unit-parchment{padding:5% 8%}
+ #camp .painted-camp .unit-title{font-size:36px;margin-bottom:7px}
+ #camp .painted-camp .camp-stats{gap:8px;margin:9px 0}
+ #camp .painted-camp .camp-note{padding:6px 0}
+ #camp .painted-camp .camp-reveal{padding:10px 16px}
+ #camp .painted-camp .camp-reveal>.camp-icon{width:min(100%,32cqh)}
+ #camp .painted-camp .camp-reveal h3{font-size:28px}
+}
+@media(prefers-reduced-motion:reduce){#camp .painted-camp *,#camp .painted-camp *::before,#camp .painted-camp *::after{animation:none!important;transition:none!important}}
+
+#camp .home-money{display:grid;place-content:center}
