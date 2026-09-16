@@ -11,7 +11,7 @@ http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const relative = decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname);
     const target = path.resolve(root, `.${relative}`);
-    const publicFile = ['index.html', 'style.css', 'main.js', 'engine.js', 'animation.js', 'viewport.js', 'asset-loader.js', 'music.js', 'theme.js', 'camp.js', 'commander-rigs.js', 'manifest.webmanifest', 'favicon.svg'].includes(path.relative(root, target)) || target.startsWith(path.join(root, 'assets', 'game') + path.sep);
+    const publicFile = ['index.html', 'style.css', 'main.js', 'engine.js', 'content.js', 'animation.js', 'viewport.js', 'asset-loader.js', 'music.js', 'theme.js', 'camp.js', 'commander-rigs.js', 'manifest.webmanifest', 'favicon.svg'].includes(path.relative(root, target)) || target.startsWith(path.join(root, 'assets', 'game') + path.sep);
     if (!publicFile || !['GET', 'HEAD'].includes(req.method)) { res.writeHead(404); return res.end('Not found'); }
     const info = await stat(target), etag = `"${info.size}-${Math.floor(info.mtimeMs)}"`;
     const cacheControl = /-v\d+\.(webp|mp3)$/.test(target) ? 'public, max-age=604800, immutable' : 'no-cache';

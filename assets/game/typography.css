@@ -1,0 +1,122 @@
+/* Single typography source for camp, battle, dialogs and canvas. No font downloads. */
+:root{
+ --font-title:KaiTi,STKaiti,"Kaiti SC","Noto Serif SC",SimSun,serif;
+ --font-body:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+ --font-number:Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+ --text-title:clamp(24px,2.65cqw,36px);
+ --text-hero:clamp(30px,3.5cqw,46px);
+ --text-section:clamp(20px,2cqw,28px);
+ --text-name:clamp(18px,1.8cqw,24px);
+ --text-button:clamp(17px,1.8cqw,24px);
+ --text-body:clamp(14px,1.3cqw,18px);
+ --text-meta:clamp(12px,1.05cqw,14px);
+ --text-small:clamp(11px,.95cqw,13px);
+ --text-number:clamp(20px,2cqw,28px);
+ --world-text-sizes:18 22 28 36 48;
+ font-family:var(--font-body);font-size:16px;line-height:1.5;
+}
+button,input,select,textarea{font:inherit}
+button{font-weight:700;line-height:1.2}
+h1,h2,h3,h4,p,dl,dd{overflow-wrap:break-word}
+strong,b{font-weight:700}
+
+/* Camp: reading text never inherits the display face from a clickable card. */
+#camp .painted-camp{font:400 var(--text-body)/1.55 var(--font-body)}
+#camp .painted-camp button{font-family:var(--font-body)}
+#camp .painted-camp .camp-topbar h2,#camp .painted-camp .camp-sheet>header h3{font:700 var(--text-title)/1.15 var(--font-title);letter-spacing:.02em;margin:0}
+#camp .painted-camp .unit-title,#camp .received-info h3{font:700 var(--text-hero)/1.15 var(--font-title)}
+#camp .painted-camp .roster-slot>strong,#camp .painted-camp .camp-tile strong,#camp .loot-choice h3{font:700 var(--text-name)/1.2 var(--font-title)}
+#camp .painted-camp .camp-note strong,#camp .painted-camp .unit-equipment h4,#camp .painted-camp .portrait-caption{font:700 var(--text-section)/1.25 var(--font-title)}
+#camp .painted-camp .camp-action,#camp .painted-camp .deck-footer>.camp-action,#camp .painted-camp .received-sheet>footer>.camp-action{font:700 var(--text-button)/1.2 var(--font-title)}
+#camp .painted-camp .camp-action small{font:600 var(--text-meta)/1.2 var(--font-body)}
+#camp .painted-camp .home-open,#camp .painted-camp .home-deck{font:700 clamp(24px,3.2cqw,46px)/1.1 var(--font-title)}
+#camp .home-open span{font:600 .62em/1 var(--font-body)}
+#camp .home-money{font:700 clamp(12px,1.7cqw,24px)/1 var(--font-number)}
+#camp .painted-camp .camp-money,#camp .received-balance b,#camp .painted-camp .camp-stats dd{font:700 var(--text-number)/1.2 var(--font-number)}
+#camp .received-balance{font:400 var(--text-body)/1.4 var(--font-body)}
+#camp .painted-camp .roster-heading,#camp .painted-camp .camp-filters button,#camp .level-picker button,#camp .roster-heading button{font:600 var(--text-body)/1.3 var(--font-body)}
+#camp .chapter-copy strong{font:700 var(--text-name)/1.2 var(--font-title)}
+#camp .chapter-copy small{font:500 var(--text-small)/1.2 var(--font-body)}
+#camp .chapter-order{font:700 var(--text-name)/1 var(--font-number);font-variant-numeric:tabular-nums}
+#camp .chapter-mark{font:700 var(--text-name)/1 var(--font-title)}
+#camp .roster-heading button{font:700 var(--text-button)/1.2 var(--font-title)}
+#camp .loot-choice p,#camp .received-info p,#camp .painted-camp .camp-note p,#camp .painted-camp .inline-gear-info>span,#camp .painted-camp .camp-reading{font:400 var(--text-body)/1.55 var(--font-body)}
+#camp .loot-choice>strong,#camp .painted-camp .inline-gear-info>strong{font:700 var(--text-body)/1.3 var(--font-body)}
+#camp .painted-camp .inline-gear-state,#camp .painted-camp .inline-gear-state>b,#camp .painted-camp .camp-text-action{font:600 var(--text-meta)/1.4 var(--font-body)}
+#camp .painted-camp .camp-eyebrow,#camp .loot-choice>small,#camp .painted-camp .roster-slot>small,#camp .painted-camp .camp-tile small,#camp .painted-camp .camp-stats dt,#camp .painted-camp .unit-equipment>header>span,#camp .painted-camp .inline-gear-state>small,#camp .painted-camp .camp-skip{font:400 var(--text-meta)/1.4 var(--font-body);letter-spacing:0}
+#camp .painted-camp .roster-slot>small{white-space:normal;padding-inline:5px;max-width:100%;line-height:1.35}
+#camp .painted-camp .tile-tag,#camp .painted-camp .roster-slot i,#camp .painted-camp .inline-gear-info>strong>small{font:600 var(--text-small)/1.2 var(--font-body);letter-spacing:0}
+#camp .painted-camp .camp-setting-row{font:600 var(--text-body)/1.4 var(--font-body)}
+#camp .painted-camp .camp-setting-row b{font:700 var(--text-body)/1.4 var(--font-body)}
+#camp .painted-camp .camp-feedback{font:600 var(--text-body)/1.5 var(--font-body)}
+#camp .received-art>span:last-child{font:700 var(--text-name)/1.2 var(--font-title);letter-spacing:.12em}
+#camp .painted-camp .roster-remove>span{font:400 24px/1 var(--font-number)}
+#camp .painted-camp .empty-slot>span{font:400 44px/1 var(--font-number)}
+#camp .painted-camp .chest-glint{font:400 48px/1 var(--font-number)}
+#camp .tactic-icon{font:700 var(--text-hero)/1 var(--font-title)}
+
+/* Battle: small labels share one legible floor; numerals have stable widths. */
+#game h1{font:700 italic clamp(26px,3.2cqw,44px)/1 var(--font-title);letter-spacing:-.04em}
+#game h1 small{font:600 var(--text-small)/1.3 var(--font-body);letter-spacing:.06em}
+#game .progress-label{font:600 var(--text-meta)/1.3 var(--font-body)}
+#game .battle-readout{font:500 var(--text-small)/1.2 var(--font-body)}
+#game .square{font:700 20px/1 var(--font-number)}
+#game #haptics{font:600 var(--text-body)/1 var(--font-body)}
+#game .goal-flag{font:700 25px/1 var(--font-body)}
+#game .purse strong{font:700 var(--text-number)/1 var(--font-number)}
+#game .purse small{font:600 var(--text-small)/1.3 var(--font-body);letter-spacing:.08em}
+#game .card .name{font:700 var(--text-body)/1.2 var(--font-title)}
+#game .card .cost{font:700 var(--text-meta)/1.1 var(--font-number)}
+#game .card .badge,#game .card .skill-status{font:600 var(--text-small)/1.2 var(--font-body);letter-spacing:0}
+#game .card-slot-empty{font:500 var(--text-meta)/1.3 var(--font-body)}
+#game .view-tools,#game #unit-menu{font:600 var(--text-meta)/1.2 var(--font-body)}
+#game .liu-pointer-label{font:700 var(--text-meta)/1.2 var(--font-title)}
+#game #unit-menu button{font:600 var(--text-meta)/1.2 var(--font-body)}
+#game #unit-name,#game #mechanism-tools b{font:700 var(--text-body)/1.2 var(--font-title)}
+#game #unit-menu #close-unit{font:400 22px/1 var(--font-number)}
+#game #mechanism-tools small,#game #ferry-label{font:500 var(--text-small)/1.3 var(--font-body)}
+#game #toast{font:600 var(--text-body)/1.5 var(--font-body)}
+#game #skill-banner,#game #gate-warning strong{font:700 var(--text-section)/1.2 var(--font-title);letter-spacing:.03em}
+#game #gate-warning span{font:500 var(--text-meta)/1.4 var(--font-body)}
+.slot::after{font:500 24px/1 var(--font-number)}
+#game.compact .card .name{bottom:17px}
+#game.compact .card .cost{bottom:3px}
+#game.compact .card .skill-status{bottom:35px}
+#game.compact .card .badge{padding:3px 4px}
+#game.compact h1{font-size:26px}
+#game.compact .battle-readout{left:34%;top:calc(var(--hud-height) - 15px)}
+#game .home-money,#game .camp-money,#game .received-balance,#game .camp-stats dd,#game .purse strong,#game .card .cost,#game #progress-text,#game #ferry-label{font-variant-numeric:tabular-nums}
+
+/* Painted result text is replaced with live labels, using the same font roles. */
+#battle-popup .popup-copy{position:absolute;left:38%;right:3%;top:3%;bottom:24%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:3% 3% 1%;background:#f0dfb9 url('camp-paper-v1.webp') center/100% 100%;color:#49301c;border-radius:8px;text-align:center}
+#battle-popup .popup-kicker{font:500 clamp(11px,2cqw,16px)/1.3 var(--font-body);color:#7c5b35;margin:0 0 2%}
+#battle-popup .popup-title{font:700 clamp(24px,7cqw,64px)/1.1 var(--font-title);margin:1% 0 3%;white-space:nowrap}
+#battle-popup .popup-description{font:400 clamp(12px,2.3cqw,18px)/1.5 var(--font-body);margin:0}
+#battle-popup[data-mode=paused] .popup-copy{justify-content:center;gap:4%}
+#battle-popup .popup-reward{z-index:1;background:#eedab2}
+#battle-popup .popup-reward strong{font:700 clamp(20px,4.5cqw,38px)/1.1 var(--font-number)}
+#battle-popup .popup-reward strong>span{font:600 clamp(12px,2.3cqw,18px)/1.2 var(--font-body)}
+#battle-popup .popup-reward small{font:400 clamp(10px,1.7cqw,13px)/1.3 var(--font-body)}
+#battle-popup .popup-stats{z-index:1;background:#eedab2}
+#battle-popup .popup-stats dt,#battle-popup[data-mode=lost] .popup-stats dt{font:500 clamp(11px,1.9cqw,15px)/1.3 var(--font-body)}
+#battle-popup .popup-stats dd,#battle-popup[data-mode=lost] .popup-stats dd{font:700 clamp(13px,2.6cqw,22px)/1.2 var(--font-number)}
+#battle-popup .popup-reward strong,#battle-popup .popup-stats dd{font-variant-numeric:tabular-nums}
+#battle-popup .popup-hotspot{display:grid;place-items:center;background:#f4e4bf url('camp-ivory-v1.webp') center/100% 100%;font:700 clamp(16px,3.5cqw,28px)/1.2 var(--font-title);color:#3a2816;text-shadow:0 1px #fff2ce;border-radius:7px}
+#battle-popup .popup-hotspot.is-primary{background:#e7b950 url('camp-gold-v1.webp') center/100% 100%}
+
+/* Loading and device prompts use the body face and the same minimum sizes. */
+#game #overlay.loading-only #load-status{font:400 var(--text-meta)/1.5 var(--font-body);letter-spacing:.02em}
+#game #overlay.loading-only #start{font:600 var(--text-body)/1.3 var(--font-body)}
+@container (max-height:420px){
+ #camp .painted-camp .camp-topbar h2,#camp .painted-camp .camp-sheet>header h3{font-size:24px}
+ #camp .painted-camp .unit-title,#camp .received-info h3{font-size:30px}
+ #camp .painted-camp .camp-note strong,#camp .painted-camp .unit-equipment h4{font-size:20px}
+ #camp .loot-choice .loot-art{width:60px}
+ #camp .loot-choice p{font-size:14px;line-height:1.4}
+ #camp .loot-choice>small{font-size:12px}
+ #camp .loot-choice h3{font-size:20px}
+ #camp .painted-camp .camp-sheet:not(.unit-sheet)>footer{gap:10px}
+ #camp .painted-camp .camp-action,#camp .painted-camp .deck-footer>.camp-action,#camp .painted-camp .received-sheet>footer>.camp-action{font-size:18px}
+ #camp .received-info p{font-size:14px;line-height:1.45}
+ #camp .received-art{max-width:175px}
+}

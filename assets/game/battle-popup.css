@@ -11,18 +11,16 @@
 #battle-popup .popup-reward{position:absolute;left:45.6%;top:40.2%;width:43.8%;height:16.8%;display:flex;align-items:center;justify-content:center;gap:3%;padding:1% 2%;color:#302314;background:#f3e2bc url('camp-ivory-v1.webp') center/100% 100% no-repeat;border:0;border-radius:0;text-align:center;overflow:hidden}
 #battle-popup .popup-reward>img{width:15%;max-height:75%;object-fit:contain;flex-shrink:0}
 #battle-popup .popup-reward>div{min-width:0}
-#battle-popup .popup-reward strong{display:block;white-space:nowrap;font:900 clamp(22px,4.7cqw,50px)/1.1 KaiTi,STKaiti,serif;font-variant-numeric:tabular-nums}
-#battle-popup .popup-reward strong>span{font-size:.62em}
-#battle-popup .popup-reward small{display:block;margin-top:3px;font-size:clamp(8px,1.1cqw,12px);line-height:1.2;color:#7b5b32}
+#battle-popup .popup-reward strong{display:block;white-space:nowrap;}
+#battle-popup .popup-reward small{display:block;margin-top:3px;color:#7b5b32}
 #battle-popup .popup-reward small:empty{display:none}
 #battle-popup .popup-stats{position:absolute;left:39%;top:58.5%;width:57.5%;height:18%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2%;padding:0;margin:0;background:#f2e1bd;color:#382a18}
 #battle-popup .popup-stats>div{display:flex;flex-direction:column;justify-content:center;text-align:center;border:1px solid #c7ac79;border-radius:4px;background:url('camp-paper-v1.webp') center/100% 100%;padding:3% 2%;min-width:0}
-#battle-popup .popup-stats dt{font:700 clamp(11px,1.9cqw,20px)/1.2 KaiTi,STKaiti,serif;margin:0 0 5px;color:#644823}
-#battle-popup .popup-stats dd{font:900 clamp(14px,2.7cqw,30px)/1.1 KaiTi,STKaiti,serif;margin:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+#battle-popup .popup-stats dt{margin:0 0 5px;color:#644823}
+#battle-popup .popup-stats dd{margin:0;white-space:nowrap;}
 #battle-popup[data-mode=lost] .popup-reward{left:43.5%;top:49%;width:52%;height:15%}
 #battle-popup[data-mode=lost] .popup-stats{left:51%;top:65%;width:42%;height:8.7%;grid-template-columns:repeat(2,minmax(0,1fr));gap:2%;background:#f2e1bd}
 #battle-popup[data-mode=lost] .popup-stats>div{flex-direction:row;align-items:center;gap:5px;border:0;background:#f2e1bd;padding:0}
-#battle-popup[data-mode=lost] .popup-stats dt{margin:0;font-size:clamp(9px,1.6cqw,18px)}
-#battle-popup[data-mode=lost] .popup-stats dd{font-size:clamp(12px,2.2cqw,24px)}
+#battle-popup[data-mode=lost] .popup-stats dt{margin:0;}
 @keyframes battle-popup-in{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){#battle-popup{animation:none}#battle-popup .popup-hotspot{transition:none}}

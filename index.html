@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="assets/game/battle-ui.css">
   <link rel="stylesheet" href="assets/game/battle-popup.css">
   <link rel="stylesheet" href="assets/game/loading-ui.css">
+  <link rel="stylesheet" href="assets/game/typography.css">
   <link rel="preload" as="image" href="assets/game/camp-home-v2.webp">
   <link rel="preload" as="image" href="assets/game/changban-preview-v1.webp">
   <link rel="modulepreload" href="engine.js">
@@ -35,15 +36,21 @@
   <div class="battle-readout"><span id="kill-count">击退 0</span><span id="enemy-count">追兵 0</span></div>
   <div id="impact-flash" aria-hidden="true"></div>
   <div id="gate-danger" aria-hidden="true" hidden></div>
-  <div id="gate-warning" role="alert" hidden><strong>警报 · 曹彰封锁长坂桥右门</strong><span>虎豹骑接应！刘备被扛到第二层右门即失败</span></div>
+  <div id="boss-pressure" aria-hidden="true" hidden></div>
+  <aside id="boss-status" hidden aria-label="敌将生命"><strong id="boss-name"></strong><progress id="boss-health" max="1" value="1" aria-label="BOSS 剩余生命"></progress></aside>
+  <aside id="defense-alert" hidden aria-label="码头防守倒计时"><strong>进入防守</strong><span>坚守 <b id="defense-seconds"></b> 秒</span></aside>
+  <div id="gate-warning" role="alert" hidden><strong>警报 · 敌船即将靠岸</strong><span>主公被押至登岸口即失败</span></div>
   <div id="skill-banner" hidden role="status"></div>
-  <nav class="view-tools" aria-label="战场视角"><button id="view-gate" hidden>⚠ 长坂桥右门</button><button id="zoom-view">放大</button><button id="follow-liu">找主公</button><button id="guard" title="赵子龙抱阿斗天降救场 · 每局一次">护驾 · 仅一次</button></nav>
+  <nav class="view-tools" aria-label="战场视角"><button id="battle-pause" disabled>暂停</button><button id="view-gate" hidden>⚠ 登岸口</button><button id="zoom-view">放大</button><button id="guard" title="赵子龙抱阿斗天降救场 · 每局一次">护驾 · 仅一次</button></nav>
+  <nav id="mechanism-tools" aria-label="关卡机关"></nav>
+  <button id="liu-indicator" hidden aria-label="主公在画面外，点击跟随主公" title="点击跟随主公"><span class="liu-pointer" aria-hidden="true"></span><span class="liu-pointer-label" aria-hidden="true">主公</span></button>
+  <aside id="ferry-status" hidden aria-label="接应船靠岸进度"><span id="ferry-art" aria-hidden="true"></span><div><strong id="ferry-label"></strong><progress id="ferry-progress" max="1" value="0" aria-label="接应船靠岸进度"></progress></div></aside>
   <aside id="unit-menu" hidden aria-label="驻守单位操作">
-    <span id="unit-name"></span><button id="dismantle">拆卸</button><button id="close-unit" aria-label="取消拆卸">×</button>
+    <span id="unit-name"></span><button id="unit-turn" hidden>转向</button><button id="unit-fold" hidden>放倒拒马</button><button id="unit-swap" hidden>邻位换防</button><button id="dismantle">拆卸</button><button id="close-unit" aria-label="取消拆卸">×</button>
   </aside>
   <div id="drag-preview" hidden aria-hidden="true"><canvas id="drag-icon" width="256" height="256"></canvas></div>
   <div id="toast" role="status"></div>
-  <footer class="toolbar"><div class="purse"><span class="supply-icon" aria-hidden="true"></span><strong id="gold">180</strong><small>军饷</small></div><div id="cards" aria-label="本次出征的武将与器械，最多六张"></div></footer>
+  <footer class="toolbar"><div class="purse"><span class="supply-icon" aria-hidden="true"></span><strong id="gold"></strong><small>军饷</small></div><div id="cards" aria-label="本次出征的武将与器械，最多六张"></div></footer>
   <section id="overlay" class="overlay loading-only" data-mode="ready">
     <section id="battle-popup" hidden role="dialog" aria-modal="true" aria-labelledby="battle-popup-title"></section>
     <div class="boot-loader" aria-label="正在加载">

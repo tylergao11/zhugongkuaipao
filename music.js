@@ -1,79 +1,75 @@
-import {fetchAsset} from './asset-loader.js';
-
-// Preload and decode before enabling Start; unlock playback in the Start tap.
+// Reuse the downloaded MP3 through native media playback. Web Audio is for effects.
 export class GameMusic {
-  constructor(context) {
-    this.context=context;
-    this.output=context.createGain();
-    this.output.gain.value=0;
-    this.output.connect(context.destination);
-    this.buffer=null; this.loading=null; this.source=null;
-    this.enabled=false; this.active=false; this.offset=0; this.started=0;
+  constructor() {
+    this.element=document.createElement('audio');
+    this.element.preload='auto';this.element.loop=true;this.element.volume=.65;
+    this.element.hidden=true;this.element.setAttribute('playsinline','');
+    document.body.append(this.element);
+    this.context=null;this.url=null;this.pending=null;
+    this.enabled=false;this.active=false;
   }
-  async load() {
-    if(this.buffer)return;
-    if(!this.loading){
-      this.loading=(async()=>{
-        const blob=await fetchAsset('assets/game/liu-run-bgm-v1.mp3',{timeout:25000});
-        await this.prepare(blob);
-      })().finally(()=>{this.loading=null;});
-    }
-    await this.loading;
+  get ready() {return !!this.url;}
+  get playing() {return !this.element.paused&&!this.element.ended&&this.element.readyState>=2;}
+  prepare(blob) {
+    if(this.ready)return;
+    if(!blob.size)throw new Error('音乐文件为空');
+    this.url=URL.createObjectURL(blob);
+    this.element.src=this.url;
+    this.element.load();
   }
-  async prepare(blob) {
-    if(this.buffer)return;
-    let timer;
-    try {
-      const bytes=await blob.arrayBuffer();
-      const buffer=await Promise.race([
-        this.context.decodeAudioData(bytes),
-        new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('音乐解码超时')),15000);}),
-      ]);
-      if(!buffer?.length||!buffer.duration)throw new Error('音乐文件无法播放');
-      this.buffer=buffer;
-    }finally{clearTimeout(timer);}
-  }
-  async enable() {
+  enable() {
     this.enabled=true;
-    try {await this.load();this.sync();}
-    catch(error){this.enabled=false;this.sync();throw error;}
+    return this.sync();
   }
   unlock() {
-    // Run both calls directly inside the tap handler for mobile Web Audio.
-    const resumed=this.context.resume();
-    const pulse=this.context.createBufferSource();
-    pulse.buffer=this.context.createBuffer(1,1,this.context.sampleRate);
-    pulse.connect(this.context.destination);pulse.onended=()=>pulse.disconnect();
-    pulse.start(0);
-    let timer;
-    return Promise.race([
-      resumed,
-      new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('请再次点击以开启声音')),4000);}),
-    ]).then(()=>{
-      if(this.context.state!=='running')throw new Error('声音尚未开启，请再点一次');
-    }).finally(()=>clearTimeout(timer));
+    // Construct/resume effects during a real tap; never make music wait for them.
+    const Context=window.AudioContext||window.webkitAudioContext;
+    if(!Context)return Promise.resolve();
+    try {
+      if(navigator.audioSession)navigator.audioSession.type='playback';
+    }catch { /* Older webviews may expose a read-only audio session. */ }
+    try {
+      if(!this.context||this.context.state==='closed')this.context=new Context();
+      if(this.context.state==='running')return Promise.resolve();
+      const resumed=this.context.resume();
+      const pulse=this.context.createBufferSource();
+      pulse.buffer=this.context.createBuffer(1,1,this.context.sampleRate);
+      pulse.connect(this.context.destination);pulse.onended=()=>pulse.disconnect();
+      pulse.start(0);
+      return resumed;
+    }catch(error){return Promise.reject(error);}
   }
-  disable() {this.enabled=false;this.sync();}
+  pause() {
+    this.pending=null;
+    this.element.pause();
+  }
+  disable() {this.enabled=false;this.pause();}
   setActive(active) {
     if(this.active===active)return;
-    this.active=active;this.sync();
+    this.active=active;
+    void this.sync().catch(error=>console.warn('Music playback unavailable',error));
   }
   sync() {
-    const now=this.context.currentTime;
-    if(this.enabled&&this.active&&this.buffer){
-      if(this.source)return;
-      const source=this.context.createBufferSource();
-      source.buffer=this.buffer;source.loop=true;source.connect(this.output);
-      this.started=now;this.source=source;
-      this.output.gain.cancelScheduledValues(now);this.output.gain.setValueAtTime(0,now);
-      this.output.gain.linearRampToValueAtTime(.65,now+.22);
-      source.start(now,this.offset%this.buffer.duration);
-    }else if(this.source){
-      const source=this.source;this.source=null;
-      this.offset=(this.offset+now-this.started)%this.buffer.duration;
-      this.output.gain.cancelScheduledValues(now);
-      this.output.gain.setTargetAtTime(0,now,.018);
-      source.stop(now+.08);source.onended=()=>source.disconnect();
-    }
+    if(!this.enabled||!this.active){this.pause();return Promise.resolve();}
+    if(!this.ready)return Promise.reject(new Error('背景音乐尚未加载完成'));
+    if(this.pending)return this.pending;
+    if(this.playing)return Promise.resolve();
+    let timer,attempt;
+    try {
+      // play() must run before any await, in the click/touchend call stack.
+      const playback=this.element.play();
+      attempt=Promise.race([
+        playback,
+        new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('请再次点击以开启声音')),4000);}),
+      ]).catch(error=>{
+        if(this.pending===attempt)this.element.pause();
+        throw error;
+      }).finally(()=>{
+        clearTimeout(timer);
+        if(this.pending===attempt)this.pending=null;
+      });
+      this.pending=attempt;
+      return attempt;
+    }catch(error){return Promise.reject(error);}
   }
 }
