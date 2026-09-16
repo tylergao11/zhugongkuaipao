@@ -74,7 +74,8 @@ strong,b{font-weight:700}
 #game #unit-menu button{font:600 var(--text-meta)/1.2 var(--font-body)}
 #game #unit-name,#game #mechanism-tools b{font:700 var(--text-body)/1.2 var(--font-title)}
 #game #unit-menu #close-unit{font:400 22px/1 var(--font-number)}
-#game #mechanism-tools small,#game #ferry-label{font:500 var(--text-small)/1.3 var(--font-body)}
+#game #mechanism-tools small,#game #ferry-label,#game #bite-hint{font:700 var(--text-body)/1.2 var(--font-title)}
+#game .liu-dash .dash-cd{font:700 var(--text-name)/1 var(--font-number)}
 #game #toast{font:600 var(--text-body)/1.5 var(--font-body)}
 #game #skill-banner,#game #gate-warning strong{font:700 var(--text-section)/1.2 var(--font-title);letter-spacing:.03em}
 #game #gate-warning span{font:500 var(--text-meta)/1.4 var(--font-body)}
@@ -85,7 +86,7 @@ strong,b{font-weight:700}
 #game.compact .card .badge{padding:3px 4px}
 #game.compact h1{font-size:26px}
 #game.compact .battle-readout{left:34%;top:calc(var(--hud-height) - 15px)}
-#game .home-money,#game .camp-money,#game .received-balance,#game .camp-stats dd,#game .purse strong,#game .card .cost,#game #progress-text,#game #ferry-label{font-variant-numeric:tabular-nums}
+#game .home-money,#game .camp-money,#game .received-balance,#game .camp-stats dd,#game .purse strong,#game .card .cost,#game #progress-text,#game #ferry-label,#game #bite-hint,#game .liu-dash .dash-cd{font-variant-numeric:tabular-nums}
 
 /* Painted result text is replaced with live labels, using the same font roles. */
 #battle-popup .popup-copy{position:absolute;left:38%;right:3%;top:3%;bottom:24%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:3% 3% 1%;background:#f0dfb9 url('camp-paper-v1.webp') center/100% 100%;color:#49301c;border-radius:8px;text-align:center}

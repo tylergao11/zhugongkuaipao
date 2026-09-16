@@ -30,7 +30,7 @@
   </div></div>
   <header class="hud">
     <h1>主公<span>快跑</span><small>刘备主题 · 长坂坡</small></h1>
-    <div class="progress-box"><div class="progress-label"><span id="escape-label">护送刘备抵达出口</span><span id="progress-text">0%</span></div><div class="track"><div id="progress-fill"></div><span id="caocao-marker" class="caocao-marker" hidden title="曹操位置">曹</span><span class="goal-flag">⚑</span></div></div>
+    <div class="progress-box"><div class="progress-label"><span id="escape-label">护送刘备抵达出口</span><span id="progress-text">0%</span></div><div class="track"><div id="progress-fill"></div><span id="chase-marker" class="chase-marker" hidden title="最近追兵">追</span><span id="caocao-marker" class="caocao-marker" hidden title="曹操位置">曹</span><span class="goal-flag">⚑</span></div></div>
     <div class="hud-actions"><button id="haptics" class="square active" aria-label="关闭震感" title="震感">震</button><button id="sound" class="square active" aria-label="关闭音乐与音效" aria-pressed="true" title="音乐与音效">♫</button><button id="battle-speed" class="square" aria-label="当前正常速度，切换 2 倍速" aria-pressed="false" title="开启 2 倍速">1×</button></div>
   </header>
   <div class="battle-readout"><span id="kill-count">击退 0</span><span id="enemy-count">追兵 0</span></div>
@@ -38,19 +38,18 @@
   <div id="gate-danger" aria-hidden="true" hidden></div>
   <div id="boss-pressure" aria-hidden="true" hidden></div>
   <aside id="boss-status" hidden aria-label="敌将生命"><strong id="boss-name"></strong><progress id="boss-health" max="1" value="1" aria-label="BOSS 剩余生命"></progress></aside>
-  <aside id="defense-alert" hidden aria-label="码头防守倒计时"><strong>进入防守</strong><span>坚守 <b id="defense-seconds"></b> 秒</span></aside>
+  <aside id="bite-hint" hidden aria-label="追兵距离">追兵 · 差 — 格</aside>
   <div id="gate-warning" role="alert" hidden><strong>警报 · 敌船即将靠岸</strong><span>主公被押至登岸口即失败</span></div>
   <div id="skill-banner" hidden role="status"></div>
   <nav class="view-tools" aria-label="战场视角"><button id="battle-pause" disabled>暂停</button><button id="view-gate" hidden>⚠ 登岸口</button><button id="zoom-view">放大</button><button id="guard" title="赵子龙抱阿斗天降救场 · 每局一次">护驾 · 仅一次</button></nav>
   <nav id="mechanism-tools" aria-label="关卡机关"></nav>
   <button id="liu-indicator" hidden aria-label="主公在画面外，点击跟随主公" title="点击跟随主公"><span class="liu-pointer" aria-hidden="true"></span><span class="liu-pointer-label" aria-hidden="true">主公</span></button>
-  <aside id="ferry-status" hidden aria-label="接应船靠岸进度"><span id="ferry-art" aria-hidden="true"></span><div><strong id="ferry-label"></strong><progress id="ferry-progress" max="1" value="0" aria-label="接应船靠岸进度"></progress></div></aside>
   <aside id="unit-menu" hidden aria-label="驻守单位操作">
     <span id="unit-name"></span><button id="unit-turn" hidden>转向</button><button id="unit-swap" hidden>邻位换防</button><button id="unit-upgrade" class="is-upgrade">升级</button><button id="dismantle">拆卸</button><button id="close-unit" aria-label="关闭菜单">×</button>
   </aside>
   <div id="drag-preview" hidden aria-hidden="true"><canvas id="drag-icon" width="256" height="256"></canvas></div>
   <div id="toast" role="status"></div>
-  <footer class="toolbar"><div class="purse"><span class="supply-icon" aria-hidden="true"></span><strong id="gold"></strong><small>军饷</small></div><div id="cards" aria-label="本次出征的武将与器械，最多六张"></div></footer>
+  <footer class="toolbar"><div class="purse"><span class="supply-icon" aria-hidden="true"></span><strong id="gold"></strong><small>军饷</small></div><button id="liu-dash" class="liu-dash" type="button" aria-label="脚底抹油" title="脚底抹油 · 30 秒冷却"><canvas id="liu-dash-icon" width="96" height="96"></canvas><span class="dash-ring" aria-hidden="true"></span><span id="liu-dash-cd" class="dash-cd" hidden></span></button><div id="cards" aria-label="本次出征的武将与器械，最多六张"></div></footer>
   <section id="overlay" class="overlay loading-only" data-mode="ready">
     <section id="battle-popup" hidden role="dialog" aria-modal="true" aria-labelledby="battle-popup-title"></section>
     <div class="boot-loader" aria-label="正在加载">

@@ -27,8 +27,13 @@
 .card-locked-slot{opacity:.63;background-image:url('camp-ivory-v1.webp')}
 #guard{background-image:url('camp-gold-v1.webp');color:#432917}
 #unit-menu .is-upgrade{background-image:url('camp-gold-v1.webp');color:#563216}
-.caocao-marker{position:absolute;top:50%;transform:translate(-50%,-50%);width:1.9em;height:1.9em;border-radius:50%;background:#b8261c;color:#ffe3c9;border:2px solid #ffd6a8;font:700 .78em var(--font-title);display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px #ff5a3c;z-index:2;pointer-events:none;transition:left .3s linear}
-.caocao-marker[hidden]{display:none}
+.caocao-marker,.chase-marker{position:absolute;top:50%;transform:translate(-50%,-50%);width:1.9em;height:1.9em;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none;transition:left .3s linear;font:700 .78em var(--font-title)}
+.caocao-marker{background:#b8261c;color:#ffe3c9;border:2px solid #ffd6a8;box-shadow:0 0 10px #ff5a3c}
+.chase-marker{background:#355843;color:#e7f3dc;border:2px solid #cfe6c4;box-shadow:0 0 8px #6d9a6a88}
+.caocao-marker[hidden],.chase-marker[hidden]{display:none}
+.liu-dash{background:url('camp-gold-v1.webp') center/cover no-repeat;border:2px solid #e4c27a;box-shadow:0 0 0 2px #3a2814}
+#bite-hint{background:url('camp-brush-v1.webp') center/100% 100% no-repeat;text-shadow:0 2px 4px #2a1408}
+#bite-hint.is-close{filter:drop-shadow(0 0 8px #d33d2199)}
 #view-gate{color:#9a2b1e;background-image:url('camp-ivory-v1.webp')}
 #liu-indicator{background:none;border:0;border-radius:0;color:#ffe6a3;filter:drop-shadow(0 2px 3px #120b06bb)}
 #liu-indicator .liu-pointer{background:url('camp-back-v1.webp') center/contain no-repeat}

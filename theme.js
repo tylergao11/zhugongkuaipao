@@ -1,4 +1,4 @@
-import {LEVELS,levelById,COMMANDERS,LOOT,EQUIPMENT,TACTICS,UNIT_NAMES} from './content.js';
+import {LEVELS,levelById,COMMANDERS,LOOT,EQUIPMENT,TACTICS,UNIT_NAMES,REMOVED_UNITS} from './content.js';
 import {ECONOMY} from './assets/game/balance.js';
 export {LEVELS,levelById,UNIT_NAMES};
 export const LIUBEI_THEME={id:'liubei',name:'刘备 · 主公快跑',faction:'仁义跑路团'};
@@ -24,13 +24,15 @@ export class CampProfile{
     this.data.claims=Array.isArray(raw.claims)?raw.claims.filter(x=>typeof x==='string').slice(-100):[];
     if(raw.version===7){
      for(const l of LEVELS)if(Array.isArray(raw.cleared?.[l.id]))this.data.cleared[l.id]=[0,1,2].map(i=>raw.cleared[l.id][i]===true);
+     if(raw.cleared?.mountain?.[0]&&!this.data.cleared.changban)this.data.cleared.changban=[true,!!raw.cleared.mountain[1],!!raw.cleared.mountain[2]];
      this.data.owned=[...new Set(Array.isArray(raw.owned)?raw.owned:[])].filter(id=>lootById(id));
-     this.data.unlocked=[...new Set(Array.isArray(raw.unlocked)?raw.unlocked:[])].filter(id=>DECK_CARDS.includes(id)&&!TACTICS.some(t=>t.id===id));
+     this.data.unlocked=[...new Set(Array.isArray(raw.unlocked)?raw.unlocked:[])].filter(id=>DECK_CARDS.includes(id)&&!REMOVED_UNITS.includes(id)&&!TACTICS.some(t=>t.id===id));
      this.data.legacyArmory=Array.isArray(raw.legacyArmory)?raw.legacyArmory:[];
      this.data.vouchers=number(raw.vouchers,1000);
      for(const [unit,id]of Object.entries(raw.fitted||{}))if(this.data.owned.includes(id)&&EQUIPMENT.some(e=>e.id===id&&e.unit===unit))this.data.fitted[unit]=id;
      if(Array.isArray(raw.pending?.choices)){const choices=[...new Set(raw.pending.choices)].filter(id=>lootById(id)&&!this.data.owned.includes(id));if(choices.length)this.data.pending={choices:choices.slice(0,3)};}
-     if(this.levelUnlocked(raw.levelId))this.data.levelId=raw.levelId;
+     const wanted=raw.levelId==='mountain'?(this.levelUnlocked('river')?'river':'changban'):raw.levelId;
+     if(this.levelUnlocked(wanted))this.data.levelId=wanted;
     }else{
      const old=Array.isArray(raw.armory)?raw.armory.filter(i=>i&&DECK_CARDS.includes(i.id)):[];
      if(raw.version===1){for(const id of Array.isArray(raw.unlocked)?raw.unlocked:[])if(DECK_CARDS.includes(id))old.push({id,rarity:'common'});for(const [id,rank]of Object.entries(raw.levels||{}))if(rank>0&&DECK_CARDS.includes(id))old.push({id,rarity:rank>=3?'rare':rank>=2?'fine':'common'});}
@@ -39,7 +41,8 @@ export class CampProfile{
      if(this.data.wins>0)this.data.cleared[LEVELS[0].id]=[true,raw.medals?.[1]===true,raw.medals?.[2]===true];
      if(raw.version>=4&&raw.version<6){for(const id of DECK_CARDS)if(this.ownsCard(id)){const lv=raw.unitLevels?.[id];this.data.coins+=refund(LEGACY_UNIT_COSTS,Number.isFinite(lv)?Math.floor(lv)-1:0);if(raw.version>=5&&!['barricade','snare'].includes(id))this.data.coins+=refund(LEGACY_TRAINING_COSTS,raw.training?.[id]?.cooldown);}if(raw.version>=5)this.data.coins+=refund(LEGACY_TRAINING_COSTS,raw.incomeLevel);}
     }
-    if(Array.isArray(raw.deck)){this.data.deck=[...new Set(raw.deck)].filter(id=>this.ownsCard(id)).slice(0,MAX_DECK_SIZE);if(!this.data.deck.length)this.data.deck=[...DEFAULT_DECK];}
+    if(Array.isArray(raw.deck)){this.data.deck=[...new Set(raw.deck)].filter(id=>this.ownsCard(id)&&!REMOVED_UNITS.includes(id)).slice(0,MAX_DECK_SIZE);if(!this.data.deck.length)this.data.deck=[...DEFAULT_DECK];}
+    this.data.unlocked=this.data.unlocked.filter(id=>DECK_CARDS.includes(id)&&!REMOVED_UNITS.includes(id)&&!TACTICS.some(t=>t.id===id));
    }
    this.save();
   }catch{this.persistent=false;}
@@ -66,11 +69,11 @@ export class CampProfile{
   this.data.chests++;this.data.pending={choices};this.save();return this.data.pending;
  }
  chooseLoot(id){if(!this.data.pending?.choices.includes(id)||this.data.owned.includes(id))return null;const item=lootById(id);if(!item)return null;this.data.owned.push(id);this.data.pending=null;this.save();return item;}
- awardCommander(game,enemyId,role){if(!game.runId||game.themeId!==this.themeId||game.level.tutorial||!(game.level.phases.some(p=>p.roles.includes(role))||game.caocao?.role===role))return 0;const amount=COMMANDERS[role]?.coins||0,key='kill:'+game.runId+':'+enemyId;if(!amount||this.data.claims.includes(key))return 0;this.data.coins+=amount;this.data.claims.push(key);this.data.claims=this.data.claims.slice(-100);this.save();return amount;}
+ awardCommander(game,enemyId,role){const roster=[...(game.level.groups||[]),...(game.level.phases||[])];if(!game.runId||game.themeId!==this.themeId||game.level.tutorial||!(roster.some(p=>p.roles.includes(role))||game.caocao?.role===role))return 0;const amount=COMMANDERS[role]?.coins||0,key='kill:'+game.runId+':'+enemyId;if(!amount||this.data.claims.includes(key))return 0;this.data.coins+=amount;this.data.claims.push(key);this.data.claims=this.data.claims.slice(-100);this.save();return amount;}
  settle(game){
   if(!['won','lost'].includes(game.mode)||!game.runId||game.themeId!==this.themeId||this.data.claims.includes(game.runId))return null;
   const won=game.mode==='won',prior=this.data.cleared[game.level.id]||[false,false,false],first=won&&!prior[0],earned=won?[true,game.captures===0,!game.guardUsed]:[false,false,false];
-  const reward=ECONOMY.levels[game.level.id],progress=Math.max(0,Math.min(1,game.bestProgress)),rewardAllowed=!game.level.tutorial||first;
+  const reward=ECONOMY.levels[game.level.id]||{win:0,first:0},progress=Math.max(0,Math.min(1,game.bestProgress)),rewardAllowed=!game.level.tutorial||first;
   const base=!rewardAllowed?0:won?reward.win:progress>=ECONOMY.failureStart?Math.floor(reward.win*progress*ECONOMY.failureFraction):0,bonus=first?reward.first:0,medalCoins=rewardAllowed?earned.filter((v,i)=>v&&!prior[i]).length*ECONOMY.medalCoins:0,bossCoins=game.level.tutorial?0:game.bossCoins||0;
   this.data.coins+=base+bonus+medalCoins;if(won){this.data.wins++;this.data.cleared[game.level.id]=prior.map((v,i)=>v||earned[i]);}
   const next=LEVELS[LEVELS.findIndex(l=>l.id===game.level.id)+1];if(won&&next)this.data.levelId=next.id;

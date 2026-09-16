@@ -128,7 +128,7 @@ export function createCamp(profile,onChanged,onLaunch,canLaunch,options={}){
     const owned=profile.ownsCard(id),selected=profile.data.deck.includes(id),loot=equippedLoot(id);
     return '<button class="camp-tile '+(!owned?'is-locked ':'')+(selected?'is-carried':'')+'" data-action="card" data-value="'+id+'" aria-label="查看'+TYPES[id].name+'">'+icon(id)+'<strong>'+TYPES[id].name+'</strong><small>'+(owned?(loot?loot.name:role(id)):unlockText(id))+'</small>'+(selected?'<span class="tile-tag">已带</span>':'')+'</button>';
   }
-  function unlockText(id){const i=LEVELS.findIndex(l=>l.unlocks.includes(id));return i>0?'通关第'+i+'关解锁':TYPES[id].tactic?'宝箱计策':'初始可用';}
+  function unlockText(id){const i=LEVELS.findIndex(l=>l.unlocks.includes(id));return i>0?'通关'+LEVELS[i-1].name+'解锁':TYPES[id].tactic?'宝箱计策':'初始可用';}
   function levelTile(level,index){
     const unlocked=profile.levelUnlocked(level.id),selected=level.id===profile.data.levelId,cleared=profile.data.cleared[level.id]?.[0];
     const state=!unlocked?'未解锁':cleared?'已通关':selected?'当前关卡':'可出征';

@@ -31,7 +31,7 @@ const loadedAssets = new Map();
 let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let soundEnabled = true, soundTime = 0, toastUntil = 0, uiMode = '', speechUntil = 0, speech = '';
 let music, soundRequest=0, starting=false;
-let idleClock = 0,nextWarDrum=0,introCameraDetail=null;
+let idleClock = 0,nextWarDrum=0,introCameraDetail=null,biteAlarmed=false;
 let battleSpeed = 1;
 let inspectedSlot = null, swapSource=null, skillPress=null;
 const backgroundCache=new Map();
@@ -40,7 +40,8 @@ let drag = null;
 let speechAnchor=null,impactPause=0,lastImpact=0,hapticsEnabled=true,skillBannerUntil=0;
 const enemyLabelBoxes=[];
 const camera=new BattleCamera(),frameBudget=new FrameBudget(),battle=$('battle-viewport'),world=$('battle-world');
-let pan=null;
+let pan=null,lastCameraManual=0;
+function markCameraManual(){camera.follow=false;lastCameraManual=performance.now();}
 const camp=createCamp(profile,()=>{
   if(game.mode==='ready'){game.reset(profile.snapshot());showLoadoutCards();updateUI();}
 },()=>void begin(),()=>ready&&!starting&&!['running','paused','intro'].includes(game.mode),{point:stagePoint,feedback:kind=>sound(kind),canClose:()=>game.mode!=='ready'});
@@ -96,7 +97,7 @@ battle.addEventListener('pointermove',event=>{
   if(!pan||pan.id!==event.pointerId)return;
   event.preventDefault();const p=stagePoint(event.clientX,event.clientY);
   if(!pan.moved&&Math.hypot(p.x-pan.start.x,p.y-pan.start.y)>6){pan.moved=true;closeUnitMenu();battle.classList.add('panning');}
-  if(pan.moved){camera.pan(p.x-pan.last.x,p.y-pan.last.y);applyCamera();}
+  if(pan.moved){camera.pan(p.x-pan.last.x,p.y-pan.last.y);lastCameraManual=performance.now();applyCamera();}
   pan.last=p;
 });
 battle.addEventListener('pointerup',event=>{
@@ -108,9 +109,9 @@ battle.addEventListener('pointerup',event=>{
 battle.addEventListener('pointercancel',event=>{if(pan?.id===event.pointerId)stopPan();});
 battle.addEventListener('lostpointercapture',event=>{if(event.target===battle&&pan?.id===event.pointerId)stopPan();});
 $('zoom-view').addEventListener('click',()=>{closeUnitMenu();camera.toggleZoom();layoutCamera();});
-function followLiu(){clearDrag();stopPan();closeUnitMenu();const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();updateLiuIndicator();}
+function followLiu(){clearDrag();stopPan();closeUnitMenu();camera.follow=true;const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();updateLiuIndicator();}
 $('liu-indicator').addEventListener('click',followLiu);
-$('view-gate').addEventListener('click',()=>{if(!game.caozhangGateOpen)return;clearDrag();stopPan();closeUnitMenu();camera.focus(game.gate.x,game.gate.y);camera.follow=false;applyCamera();});
+$('view-gate').addEventListener('click',()=>{if(!game.caozhangGateOpen)return;clearDrag();stopPan();closeUnitMenu();camera.focus(game.gate.x,game.gate.y);markCameraManual();applyCamera();});
 $('guard').addEventListener('click',()=>{if(game.summonGuard()){clearDrag();closeUnitMenu();const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();processEvents();updateUI();}});
 
 function battlefieldPoint(clientX,clientY) {
@@ -130,7 +131,7 @@ function mechanismAt(clientX,clientY){
 function activateMapMechanism(id,focus=false){
   const m=game.mechanisms.find(m=>m.id===id);if(!m||m.used||game.mode!=='running')return;
   if(game.bestProgress<m.at){toast('尚未就绪');return;}
-  if(focus){const target=m.targetSlot||m.slot;camera.focus(target.x,target.y);camera.follow=false;applyCamera();}
+  if(focus){const target=m.targetSlot||m.slot;camera.focus(target.x,target.y);markCameraManual();applyCamera();}
   game.activateMechanism(id);processEvents();updateUI();
 }
 function updateLiuIndicator(){
@@ -140,7 +141,7 @@ function updateLiuIndicator(){
   if(!camera.edgeIndicator(p.x,targetY)){button.hidden=true;return;}
   button.hidden=false;
   const halfWidth=button.offsetWidth/2,halfHeight=button.offsetHeight/2,gap=8;
-  const tools=[document.querySelector('.view-tools'),$('mechanism-tools'),$('ferry-status')];
+  const tools=[document.querySelector('.view-tools'),$('mechanism-tools'),$('bite-hint')];
   const top=Math.max(0,...tools.filter(el=>!el.hidden&&el.children.length).map(el=>el.offsetTop+el.offsetHeight-battle.offsetTop));
   const point=camera.edgeIndicator(p.x,targetY,{left:halfWidth+gap,right:halfWidth+gap,top:top+halfHeight+gap,bottom:halfHeight+gap});
   button.style.left=point.x+'px';button.style.top=(battle.offsetTop+point.y)+'px';
@@ -189,7 +190,7 @@ function startDrag(event,type,button) {
   if(!game.isUnlocked(type)){toast('尚未解锁');return;}
   if(!game.isEquipped(type)){toast('未编入阵容');return;}
   if(!game.canBuy(type)){toast(game.tacticsUsed.has(type)?'本局已用':game.cooldowns[type]>0?`冷却 ${Math.ceil(game.cooldowns[type])} 秒`:game.gold<game.types[type].cost?'军饷不足':'武将已上阵');return;}
-  camera.follow=false;game.selected=type;drag={type,button,pointerId:event.pointerId};
+  markCameraManual();game.selected=type;drag={type,button,pointerId:event.pointerId};
   button.setPointerCapture(event.pointerId);button.classList.add('dragging');$('drag-preview').hidden=false;
   updateUI();moveDrag(event);
 }
@@ -300,6 +301,10 @@ function createControls() {
     button.addEventListener('contextmenu',event=>event.preventDefault());
     $('cards').append(button); cards.set(type,{button,icon,cost,skill,meter,fill});
   }
+  $('liu-dash').addEventListener('click',()=>{
+    if(!game.useLiuDash()){toast(game.liu.carrier||game.liu.mounted?'现在用不了脚底抹油':game.liuDashCooldown>0?`冷却 ${Math.ceil(game.liuDashCooldown)} 秒`:'现在用不了');return;}
+    processEvents();updateUI();
+  });
   showLoadoutCards();
 }
 
@@ -309,13 +314,10 @@ function updateUI() {
   if(inspectedSlot!==null && (!game.units.some(u=>u.slot===inspectedSlot)||game.mode!=='running'))closeUnitMenu();
   $('gold').textContent=Math.floor(game.gold);
   document.querySelector('.hud h1 small').textContent=(game.level.boss?'BOSS · ':'')+game.level.name+(game.level.tutorial?' · 教学关':'');
-  // Cao Cao owns the boss bar once he is on the map; before that the first living commander does.
-  const bossBattle=!!game.level.boss&&['running','paused'].includes(game.mode),boss=(game.caocao&&game.caocao.hp>0&&!game.caocao.escaped?game.caocao:null)||game.enemies.find(e=>e.boss&&e.hp>0&&!e.escaped);
+  const boss=game.caocao&&game.caocao.hp>0&&!game.caocao.escaped?game.caocao:null;
+  const bossBattle=!!boss&&['running','paused'].includes(game.mode);
   stage.classList.toggle('boss-level',!!game.level.boss);stage.classList.toggle('boss-running',bossBattle&&game.mode==='running');stage.classList.toggle('has-mechanisms',game.mechanisms.length>0);
-  $('boss-pressure').hidden=!bossBattle;$('boss-status').hidden=!bossBattle||!boss;
-  const defending=game.defending&&['running','paused'].includes(game.mode);
-  stage.classList.toggle('defending',defending);$('defense-alert').hidden=!defending;
-  if(defending)$('defense-seconds').textContent=Math.ceil(game.defenseRemaining);
+  $('boss-pressure').hidden=!bossBattle;$('boss-status').hidden=!bossBattle;
   if(boss){$('boss-name').textContent='BOSS · '+ENEMY_TYPES[boss.role].name;$('boss-health').value=Math.max(0,boss.hp/boss.maxHp);}
   const mechanismsHTML=game.mechanisms.map(m=>{const locked=game.bestProgress<m.at,label=m.used?'已使用':locked?'行至 '+Math.round(m.at*100)+'%':m.targetSlot?'正下方砸击 · 一次':'点击发动 · 一次';return '<button data-mechanism="'+m.id+'" title="'+m.name+'：'+label+'" '+(m.used||locked||game.mode!=='running'?'disabled':'')+'>'+artIcon(m.used&&m.id==='rockfall'?'rockfall-spent':m.id)+'<span><b>'+m.name+'</b><small>'+label+'</small></span></button>';}).join('');
   if(mechanismsMarkup!==mechanismsHTML){mechanismsMarkup=mechanismsHTML;$('mechanism-tools').innerHTML=mechanismsHTML;}
@@ -338,17 +340,24 @@ function updateUI() {
   $('progress-fill').parentElement.classList.toggle('captured',!!game.liu.carrier);
   const marker=$('caocao-marker'),cc=game.caocao;
   {const show=!!cc&&cc.hp>0&&!cc.escaped&&['running','paused'].includes(game.mode);marker.hidden=!show;if(show)marker.style.left=`${Math.min(100,Math.max(0,cc.s/ROUTE_LENGTH*100))}%`;}
-  const rightGateThreat=game.caozhangGateOpen;
-  $('escape-label').textContent=game.liu.carrier ? rightGateThreat?'正被押往登岸口':'主公被押送' : game.liu.mounted?'刘备 · 的卢疾驰':game.liu.dash>0?'刘备 · 脚底抹油！':gateActive?'刘备逃脱 · 登岸口已开':'刘备逃脱进度';
-  if(game.defending&&!game.liu.carrier)$('escape-label').textContent='进入防守 · 守住码头';
-  const ferryVisible=game.ferryStartedAt!==null&&['running','paused'].includes(game.mode);
-  $('ferry-status').hidden=!ferryVisible;
-  if(ferryVisible){
-    const remaining=game.defenseRemaining;
-    $('ferry-label').textContent=game.ferryReady?'接应船已到 · 护送登船':'接应船靠岸 · '+Math.ceil(remaining)+' 秒';
-    $('ferry-progress').max=game.level.escape.wait;$('ferry-progress').value=game.level.escape.wait-remaining;
-    if(!$('ferry-art').firstChild)$('ferry-art').innerHTML=artIcon('ferry');
-  }
+  const chaser=game.nearestChaser?.()||null,chase=$('chase-marker');
+  {const show=!!chaser&&['running','paused'].includes(game.mode);chase.hidden=!show;if(show)chase.style.left=`${Math.min(100,Math.max(0,chaser.s/ROUTE_LENGTH*100))}%`;}
+  const bite=$('bite-hint'),inBattle=['running','paused'].includes(game.mode)&&!!game.level.groups;
+  bite.hidden=!inBattle;
+  if(inBattle){
+    const caught=game.liu.carrier,grids=game.biteDistance(),near=!caught&&Number.isFinite(grids)&&grids<=game.biteThresholds().caught;
+    bite.textContent=caught?`离${game.exitName()} · 还剩 ${Math.round(game.exitRemainGrids()*10)/10} 格`:game.biteLabel();
+    bite.classList.toggle('is-close',near||caught);
+    if(near&&!biteAlarmed){biteAlarmed=true;impact(true);}
+    if(!near)biteAlarmed=false;
+  }else biteAlarmed=false;
+  const dash=$('liu-dash'),cd=$('liu-dash-cd');
+  dash.disabled=!game.canLiuDash();
+  dash.classList.toggle('is-ready',game.canLiuDash());
+  dash.classList.toggle('is-cooling',game.liuDashCooldown>0);
+  dash.style.setProperty('--dash-left',String(game.liuDashCooldown>0?1-game.liuDashCooldown/BATTLE.liu.dashCooldown:1));
+  if(game.liuDashCooldown>0){cd.hidden=false;cd.textContent=Math.ceil(game.liuDashCooldown);}else cd.hidden=true;
+  $('escape-label').textContent=game.liu.carrier ? `正被押往${game.exitName()}` : game.liu.mounted?'刘备 · 的卢疾驰':game.liu.dash>0?'刘备 · 脚底抹油！':game.plankOpen?'刘备逃脱 · 栈道口已开':gateActive?'刘备逃脱 · 登岸口已开':'刘备逃脱进度';
   for (const [type,{button,skill,meter,fill}] of cards) {
     button.disabled=game.mode==='intro';
     const def=game.types[type],unit=game.units.find(u=>u.type===type),deployed=def.unique&&!!unit;
@@ -430,8 +439,8 @@ async function begin() {
   else {
     game.reset(profile.snapshot());setBattleSpeed(1);game.start();showLoadoutCards();
     if(game.intro){speech='';introCameraDetail=camera.detail;camera.detail=false;layoutCamera();}
-    else say(game.level.boss?'守住渡口，接应船还没到！':'我先探路，你们慢聊！',3);
-    game.nextTalk=3;skillBannerUntil=0;impactPause=0;nextWarDrum=0;
+    else say(game.level.boss?'船就在前面，别让他们咬住！':'我先探路，你们慢聊！',3);
+    game.nextTalk=3;skillBannerUntil=0;impactPause=0;nextWarDrum=0;biteAlarmed=false;
     const p=locate(game.liu.s),horse=game.intro&&locate(game.intro.s);camera.focus(horse?(p.x+horse.x)/2:p.x,p.y);applyCamera();
   }
   accumulated=0; previous=performance.now(); updateUI();
@@ -533,11 +542,6 @@ window.addEventListener('blur',()=>{stopPan();if(drag){clearDrag();updateUI();}}
 function processEvents() {
   for (const e of game.events.splice(0)) {
     if(e.type==='intro-end'){camera.detail=introCameraDetail??camera.detail;introCameraDetail=null;layoutCamera();const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();speech='';speechUntil=0;}
-    if(e.type==='defense-start'){
-      speech='';speechUntil=0;const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();
-      skillBannerUntil=0;impact(true);sound('war-drum');updateUI();
-    }
-    if(e.type==='defense-end'){toast('接应船已到，快撤！');sound('rescue');updateUI();}
     if(e.type==='start'&&game.level.boss){$('skill-banner').textContent='BOSS 关 · '+game.level.name;$('skill-banner').style.setProperty('--skill-color','#ff936e');skillBannerUntil=game.time+2.5;toast('军饷 +'+game.level.startingGoldBonus,2.5);}
     if (e.text&&e.type!=='talk') toast(e.text,e.type==='capture'?3.5:2.5);
     if (e.type==='capture') {say('抓错啦！我就是个卖草鞋的！',4);impact(true);}
@@ -674,7 +678,7 @@ function drawBackground(t) {
   const haze=ctx.createLinearGradient(0,0,0,HEIGHT);haze.addColorStop(0,'#0d162522');haze.addColorStop(.8,'#111c2722');haze.addColorStop(1,'#0b121766');ctx.fillStyle=haze;ctx.fillRect(0,0,WIDTH,HEIGHT);
   // Platforms and staircases belong to the approved painting, never draw a second set.
   paintedSign('曹军入口',18,FLOOR_Y[0]+4,128,34,18,'#7d2e20');
-  paintedSign(game.level.escape?'接应渡船 →':'逃生出口 →',1225,FLOOR_Y[2]+4,195,34,19);
+  paintedSign(game.level.boss?'接应渡船 →':'逃生出口 →',1225,FLOOR_Y[2]+4,195,34,19);
   for(let f=0;f<3;f++){
     paintedSign(game.level.floors[f],13,FLOOR_Y[f]-160,96,38,21);
     ctx.globalAlpha=.24;for(let j=0;j<5;j++){const x=390+j*163,y=FLOOR_Y[f]-11;ctx.fillStyle='#f4d78f';ctx.beginPath();const d=f===1?-1:1;ctx.moveTo(x-5*d,y-5);ctx.lineTo(x+3*d,y);ctx.lineTo(x-5*d,y+5);ctx.fill();}ctx.globalAlpha=1;
@@ -693,12 +697,12 @@ function drawCaozhangGate(t){
   ctx.restore();
 }
 function drawFerry(t){
-  if(game.ferryStartedAt===null)return;
-  const dock=locate(ROUTE_LENGTH),enter=Math.min(1,(t-game.ferryStartedAt)/game.level.escape.wait),x=dock.x+(1-enter)*180;
-  ctx.save();ctx.globalAlpha=.45+enter*.55;
-  drawArt(ctx,battleArt,'ferry',x-136,dock.y-229+(reducedMotion?0:Math.sin(t*2)*2),260);
+  if(!game.level.boss)return;
+  const dock=locate(ROUTE_LENGTH);
+  ctx.save();
+  drawArt(ctx,battleArt,'ferry',dock.x-136,dock.y-229+(reducedMotion?0:Math.sin(t*2)*2),260);
   ctx.restore();
-  paintedSign(game.ferryReady?'接应船 · 可以撤离':'接应船正在靠岸',dock.x-176,dock.y+5,214,33,18,'#36523d');
+  paintedSign('接应船 · 跑到即撤',dock.x-176,dock.y+5,214,33,18,'#36523d');
 }
 function drawMechanisms(t){
   for(const m of game.mechanisms){
@@ -716,12 +720,6 @@ function drawMechanisms(t){
     }
     paintedSign(m.name+(m.used?' · 已用':ready?' · 可发动':''),m.slot.x-65,m.slot.y+12,130,30,17);
     ctx.restore();
-  }
-  if(game.decoy){
-    const p=locate(game.decoy.s),carried=!!game.decoy.carrier;
-    ctx.save();ctx.translate(p.x,p.y-(carried?85:0));if(carried)ctx.rotate(-.65);
-    drawArt(ctx,battleArt,'decoy',-58,-107,116);ctx.restore();
-    text(ctx,carried?'抱走的是假主公':'草人诱敌',p.x,p.y-(carried?175:122),18,'#e8dc99');
   }
 }
 function drawMount(p,mounted=false){
@@ -957,8 +955,7 @@ function render() {
   }
   const liu=locate(game.liu.s);
   if(!game.liu.carrier){
-    if(game.liuCrouching){const size=actorSizes.liubei;shadow(liu.x,liu.y,34);ctx.save();ctx.translate(liu.x,liu.y);ctx.scale(liu.dir,1);drawArt(ctx,battleArt,'liubei-crouch',-size/2,-size*.95,size);ctx.restore();}
-    else if(game.liu.mounted)drawMount(liu,true);
+    if(game.liu.mounted)drawMount(liu,true);
     else{shadow(liu.x,liu.y,34);actor(ctx,'liubei',liu.x,liu.y,actorSizes.liubei,liu.dir,game.mode==='ready'||game.mode==='intro'?'idle':'run',game.liu.walk);}
   }
   if(game.mode==='intro'&&game.intro.phase==='reply')speechBubble(liu.x,liu.y,game.intro.reply,30);
@@ -974,7 +971,14 @@ function render() {
   }
   ctx.restore();
 }
+function drawDashIcon(){
+  const canvas=$('liu-dash-icon'),c=canvas.getContext('2d');c.clearRect(0,0,96,96);
+  if(!images.actors)return;
+  const cell=images.actors.width/4,scale=cell/512;
+  c.drawImage(images.actors,90*scale,48*scale,300*scale,300*scale,6,4,84,84);
+}
 function drawCards(){
+  drawDashIcon();
   const heads={guanyu:[116,134,290,253],zhangfei:[130,145,280,250],zhugeliang:[210,35,270,300],archer:[130,55,245,265]};
   for(const [type,{icon}]of cards){
     const c=icon.getContext('2d');c.clearRect(0,0,180,132);
@@ -991,7 +995,7 @@ function loop(now){
   if(!previous)previous=now;const delta=Math.min((now-previous)/1000,.1);previous=now;idleClock+=delta;
   const battleDelta=delta*battleSpeed;
   if(['running','intro'].includes(game.mode)&&!document.hidden){
-    if(game.mode==='running'&&game.level.boss&&now>=nextWarDrum){sound('war-drum');nextWarDrum=now+(game.ferryStartedAt!==null?850:1400);}
+    if(game.mode==='running'&&game.level.boss&&now>=nextWarDrum){sound('war-drum');nextWarDrum=now+1400;}
     if(impactPause>0){impactPause=Math.max(0,impactPause-battleDelta);accumulated=0;}
     // Speed up the battle clock while keeping collision steps and paint pacing unchanged.
     else{accumulated+=battleDelta;while(accumulated>=1/60){game.update(1/60);accumulated-=1/60;}processEvents();}
@@ -1005,9 +1009,10 @@ function loop(now){
         if(p.x>=0&&p.x<=w&&y>=0&&y<=h){
           const edge=(v,max)=>v<28?(28-v)/28:v>max-28?-(v-max+28)/28:0;
           const dx=edge(p.x,w)*220*delta,dy=edge(y,h)*190*delta;
-          if(dx||dy){camera.pan(dx,dy);applyCamera();refreshDrag();}
+          if(dx||dy){camera.pan(dx,dy);lastCameraManual=now;applyCamera();refreshDrag();}
         }
-      }else if(camera.follow){const p=locate(game.liu.s),guard=game.effects.some(e=>e.kind==='guard-arrival');camera.track(p.x,p.y-(guard?45:0),battleDelta);applyCamera();}
+      }else if(!camera.follow&&now-lastCameraManual>3000){camera.follow=true;}
+      if(camera.follow){const p=locate(game.liu.s),guard=game.effects.some(e=>e.kind==='guard-arrival');camera.track(p.x,p.y-(guard?45:0),battleDelta);applyCamera();}
     }
     const active=['running','intro'].includes(game.mode)&&$('camp').hidden;
     if(frameBudget.due(now,active)){

@@ -34,5 +34,5 @@ export function drawArt(ctx,images,id,x,y,width,height=width){
   ctx.drawImage(img,sprite.tile%atlas.cols*sw,Math.floor(sprite.tile/atlas.cols)*sh,sw,sh,x,y,width,height);return true;
 }
 export function battleArtKeys(level,deck){
-  return [...new Set([...(level.mount?[level.mount.id]:[]),...(level.intro?[level.intro.id]:[]),...(level.mechanisms||[]).map(m=>ART_SPRITES[m.id]?.atlas).filter(Boolean),...(level.gate||level.escape?['river']:[]),...(level.escape?['defense']:[]),...(deck.includes('smoke')?['tactics']:[]),...(level.caocao?['caocao']:[])])];
+  return [...new Set([...(level.mount?[level.mount.id]:[]),...(level.intro?[level.intro.id]:[]),...(level.mechanisms||[]).map(m=>ART_SPRITES[m.id]?.atlas).filter(Boolean),...(level.gate||level.boss?['river']:[]),...(deck.includes('smoke')?['tactics']:[]),...(level.caocao?['caocao']:[])])];
 }
