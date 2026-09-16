@@ -1,6 +1,6 @@
 import {LIUBEI_THEME,DEFAULT_DECK,DECK_CARDS,MAX_DECK_SIZE} from './theme.js';
 import {levelById,COMMANDERS,UNIT_NAMES,equipmentById,TACTICS} from './content.js';
-import {GRID_SPACING,BATTLE,UNIT_STATS,ENEMY_STATS,VARIANT_RULES,TACTIC_STATS} from './assets/game/balance.js';
+import {GRID_SPACING,BATTLE,UNIT_STATS,ENEMY_STATS,VARIANT_RULES,TACTIC_STATS,PERKS} from './assets/game/balance.js';
 export {GRID_SPACING};
 export const WIDTH = 1440, HEIGHT = 810;
 export const rangeLabel = def => def.range>=GRID_SPACING ? `${Math.round(def.range/GRID_SPACING*10)/10} 格` : def.range ? '近身' : '—';
@@ -14,8 +14,6 @@ export const TYPES = {
   archer: {ranged:true,color:'#e7bd68',help:'可越过拒马射击 · 可射落伞兵'},
   lancer: {locked:true,color:'#aec779',help:'提前架枪 · 迎击截停冲锋'},
   shieldbearer: {locked:true,color:'#b6bf7b',help:'正面架盾 · 可与相邻普通兵换位'},
-  crossbowman: {ranged:true,locked:true,color:'#78c6b2',help:'两箭连射 · 优先射扛人的'},
-  slinger: {ranged:true,locked:true,color:'#dbbc89',help:'弧线越盾 · 优先打支援兵'},
   barricade: {color:'#c79d69',help:'占一格 · 阻挡追兵'},
   log: {locked:true,instant:true,color:'#d6ab70',help:'滚动撞兵并推退'},
   oil: {locked:true,instant:true,color:'#ff9451',help:'持续灼烧 · 破除举盾'},
@@ -38,7 +36,8 @@ export const ENEMY_TYPES = Object.fromEntries(Object.entries({
   drummer: {name:'催命鼓手',color:'#bd9fff',skill:'敲鼓催军',help:'击鼓加快附近同伴'},
   airborne: {name:'油纸伞兵',color:'#8ddcda',help:'空降后排 · 落点提前预警'},
   caohong: {name:'曹洪',color:'#f5ca70',skill:'重金悬赏',boss:true},
-  xiahou: {name:'夏侯惇',color:'#ff8b64',skill:'蛮牛冲阵',boss:true}
+  xiahou: {name:'夏侯惇',color:'#ff8b64',skill:'蛮牛冲阵',boss:true},
+  caocao: {name:'曹操',color:'#d8362a',skill:'亲至',boss:true,sweeper:true,help:'碰到主公即败 · 不能被震晕或击退，只能减速'}
 }).map(([id,def])=>[id,{...def,...ENEMY_STATS[id]}]));
 const points = [[65,665],[1400,665],[1300,433],[42,433],[160,236],[1370,236]];
 export const SEGMENTS = [];
@@ -61,6 +60,7 @@ export const SLOTS = Array.from({ length: 18 }, (_, id) => {
 });
 const live=e=>e.hp>0&&!e.escaped;
 const grounded=e=>live(e)&&!(e.airborne>0);
+const sweeper=e=>!!ENEMY_TYPES[e.role]?.sweeper;
 export class Game{
  constructor(loadout={}){this.reset(loadout);}
  reset(loadout=this.loadout||{}){
@@ -73,13 +73,13 @@ export class Game{
   const mount=this.level.mount,road=mount&&SEGMENTS[mount.floor*2];
   this.mount=mount?{...mount,s:mount.progress!==undefined?ROUTE_LENGTH*mount.progress:road.start+road.len*mount.position,claimed:false}:null;
   this.intro=this.level.intro?{...this.level.intro,s:ROUTE_LENGTH*this.level.intro.progress,time:0,phase:'horse-talk'}:null;
-  this.units=[];this.enemies=[];this.effects=[];this.events=[];this.selected=null;this.tacticSource=null;
-  const ambush=this.level.ambush;this.ambush=ambush?{...ambush,slots:ambush.formation.map((type,i)=>SLOTS.find(s=>s.floor===ambush.floor&&s.col===ambush.firstCol+i)),used:false}:null;
+  this.units=[];this.enemies=[];this.effects=[];this.events=[];this.selected=null;
   this.serial=0;this.spawned=0;this.groundSpawned=0;this.airborneSpawned=0;this.enemyLimit=this.level.phases.reduce((s,p)=>s+p.roles.length,0);
   this.phaseTimes={};this.spawnQueue=[];this.commanders=new Set();this.mechanisms=(this.level.mechanisms||[]).map(m=>({...m,slot:SLOTS.find(s=>s.floor===m.floor&&s.col===m.col),targetSlot:SLOTS.find(s=>s.floor===m.targetFloor&&s.col===m.col),used:false}));
   this.cooldowns={};this.heroCooldowns={};this.tacticsUsed=new Set();this.guardUsed=false;
   this.caozhangGateOpen=false;this.caozhangGateOpenedAt=0;this.gateWarningAt=null;this.gate=this.level.gate?{...CAOZHANG_GATE,...this.level.gate}:null;
   this.ferryStartedAt=null;this.ferryReady=false;this.decoy=null;this.shake=0;this.nextTalk=0;this.nextChatter=8;this.talkIndex=0;this.runId=null;this.rewardReceipt=null;this.bossCoins=0;
+  this.caocao=null;this.lossBlame=null;
  }
  isUnlocked(id){return !!TYPES[id]&&(DEFAULT_DECK.includes(id)||this.loadout.unlocked.includes(id));}
  isEquipped(id){return this.deck.includes(id);}
@@ -91,24 +91,16 @@ export class Game{
  start(){if(this.mode!=='ready'||!this.deck.some(id=>!TYPES[id].tactic))return false;this.mode=this.intro?'intro':'running';this.runId=globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random()}`;this.event(this.intro?'intro-start':'start');return true;}
  canBuy(id){const d=this.types[id];return !!d&&this.isEquipped(id)&&this.isUnlocked(id)&&this.gold>=d.cost&&!(this.cooldowns[id]>0)&&!this.tacticsUsed.has(id)&&!(d.unique&&this.units.some(u=>u.type===id));}
  select(id){if(this.isEquipped(id))this.selected=id;}
- ambushReserved(id){return !!this.ambush&&!this.ambush.used&&this.ambush.slots.some(s=>s.id===id);}
- canPlace(type,id){return !!SLOTS[id]&&this.canBuy(type)&&(!this.requiresSlot(type)||!this.ambushReserved(id)&&!this.units.some(u=>u.hp>0&&(u.slot===id||u.destination===id)));}
- requiresSlot(type){return !this.types[type]?.instant||type==='lure'||type==='redeploy';}
+ canPlace(type,id){return !!SLOTS[id]&&this.canBuy(type)&&(!this.requiresSlot(type)||!this.units.some(u=>u.hp>0&&u.slot===id));}
+ requiresSlot(type){return !this.types[type]?.instant;}
  placementDirection(type,slot,dir){
   const road=SEGMENTS[slot.floor*2],towardEnemy=-Math.sign(road.b[0]-road.a[0]);
   return type==='log'?towardEnemy:dir===1||dir===-1?dir:towardEnemy;
  }
  deployUnit(type,slot,dir=this.placementDirection(type,slot)){
-  const d=this.types[type],u={id:++this.serial,type,slot:slot.id,hp:d.hp,maxHp:d.hp,dir,fixedDir:dir,cooldown:BATTLE.deploymentDelay,skillCooldown:Math.max(BATTLE.heroReadyDelay,this.heroCooldowns[type]||0),guard:0,shieldReady:0,brace:UNIT_STATS.lancer.braceTime,attack:0,hit:0,born:this.time,variant:d.variant,folds:0,folded:false};
+  const d=this.types[type],u={id:++this.serial,type,slot:slot.id,hp:d.hp,maxHp:d.hp,dir,fixedDir:dir,cooldown:BATTLE.deploymentDelay,skillCooldown:Math.max(BATTLE.heroReadyDelay,this.heroCooldowns[type]||0),guard:0,shieldReady:0,brace:UNIT_STATS.lancer.braceTime,attack:0,hit:0,born:this.time,variant:d.variant,level:1,invested:d.cost};
   if(d.unique)this.heroCooldowns[type]=u.skillCooldown;
   this.units.push(u);this.effect('summon',slot,{color:d.color});return u;
- }
- triggerAmbush(){
-  const ambush=this.ambush;if(!ambush||ambush.used)return;
-  const front=ambush.slots[0];
-  if(!this.enemies.some(e=>grounded(e)&&locate(e.s).floor===front.floor&&Math.abs(e.s-front.s)<=ambush.triggerRadius))return;
-  ambush.used=true;ambush.formation.forEach((type,i)=>this.deployUnit(type,ambush.slots[i]));
-  this.event('ambush',{text:ambush.name+'！'});
  }
  place(id,dir){
   if(this.mode!=='running')return false;
@@ -117,44 +109,47 @@ export class Game{
   dir=this.placementDirection(type,slot,dir);
   if(d.tactic&&!this.useTactic(type,slot))return false;
   this.gold-=d.cost;if(d.cooldown)this.cooldowns[type]=d.cooldown;
-  if(type==='log'){
-   if(d.variant==='wood-drop'){for(const e of this.enemies.filter(e=>grounded(e)&&locate(e.s).floor===slot.floor&&Math.abs(e.s-slot.s)<VARIANT_RULES["wood-drop"].radius)){this.interrupt(e,VARIANT_RULES["wood-drop"].stun);this.damage(e,d.damage,'impact',true,slot.s);}this.effect('roar',slot,{color:d.color});}
-   else this.effects.push({kind:'log',floor:slot.floor,x:slot.x,y:slot.y,startX:slot.x,dir,variant:d.variant,returning:false,life:d.duration,maxLife:d.duration,hit:new Set(),returnHit:new Set()});
-  }else if(type==='oil')this.zone(d.variant==='sticky'?'sticky':d.variant==='fire-line'?'fire-line':'oil',slot,d.duration,d.radius,{damage:d.damage});
+  if(type==='log')this.effects.push({kind:'log',floor:slot.floor,x:slot.x,y:slot.y,startX:slot.x,dir,life:d.duration,maxLife:d.duration,hit:new Set()});
+  else if(type==='oil')this.zone('oil',slot,d.duration,d.radius,{damage:d.damage});
   else if(!d.instant)this.deployUnit(type,slot,dir);
   this.selected=null;this.event('place',{unitType:type,slot:id,x:slot.x,y:slot.y});return true;
  }
  useTactic(type,slot){
-  if(type==='redeploy'){
-   const u=this.units.find(u=>u.slot===this.tacticSource),d=u&&this.types[u.type];
-   if(!u||d.unique||d.device||d.trap||!d.damage||u.destination!==undefined||this.enemies.some(e=>grounded(e)&&Math.abs(e.s-SLOTS[u.slot].s)<BATTLE.redeploySafeDistance)){this.event('notice',{text:'先点选一名未贴身交战的普通兵，再把调兵令拖到空格。'});return false;}
-   u.moveS=SLOTS[u.slot].s;u.destination=slot.id;
-  }else if(type==='lure')this.units.push({id:++this.serial,type:'lure',slot:slot.id,hp:1,maxHp:1,dir:1,cooldown:0,skillCooldown:0,guard:0,attack:0,hit:0,born:this.time});
-  else if(type==='smoke')this.zone('smoke',slot,TACTIC_STATS.smoke.duration,TACTIC_STATS.smoke.radius);
+  if(type==='smoke')this.zone('smoke',slot,TACTIC_STATS.smoke.duration,TACTIC_STATS.smoke.radius);
   this.tacticsUsed.add(type);return true;
  }
- dismantle(id){if(this.mode!=='running')return false;const i=this.units.findIndex(u=>u.slot===id);if(i<0)return false;const u=this.units[i];if(u.destination!==undefined||TYPES[u.type].tactic)return false;this.units.splice(i,1);this.releaseTether(u);this.gold+=Math.floor(TYPES[u.type].cost*BATTLE.dismantleRefund*Math.max(0,u.hp/u.maxHp));this.event('dismantle',{text:'已拆卸'});return true;}
+ // Refund is half of everything spent on the individual (price + upgrades), scaled by remaining HP.
+ dismantle(id){if(this.mode!=='running')return false;const i=this.units.findIndex(u=>u.slot===id);if(i<0)return false;const u=this.units[i];if(TYPES[u.type].tactic)return false;this.units.splice(i,1);this.gold+=this.refundOf(u);this.event('dismantle',{text:'已拆卸'});return true;}
+ refundOf(u){return Math.floor((u.invested||TYPES[u.type].cost)*BATTLE.dismantleRefund*Math.max(0,Math.min(1,u.hp/u.maxHp)));}
+ // Upgrades: damage scales through unitPower(); HP grows in place and the gain is healed on the spot. Level 2 unlocks the perk.
+ canUpgrade(u){return !!u&&u.hp>0&&!TYPES[u.type].trap&&!TYPES[u.type].tactic&&(u.level||1)<BATTLE.upgrade.maxLevel;}
+ upgradeCost(u){if(!this.canUpgrade(u))return 0;return Math.round(TYPES[u.type].cost*BATTLE.upgrade.costRatio[Math.min((u.level||1)-1,BATTLE.upgrade.costRatio.length-1)]);}
+ unitPower(u){return Math.pow(BATTLE.upgrade.damageMultiplier,(u.level||1)-1);}
+ perk(u){return u&&(u.level||1)>=BATTLE.upgrade.perkLevel?PERKS[u.type]||null:null;}
+ upgrade(id){
+  if(this.mode!=='running')return false;const u=this.units.find(u=>u.slot===id);
+  const cost=this.upgradeCost(u);if(!cost||this.gold<cost)return false;
+  this.gold-=cost;u.invested=(u.invested||TYPES[u.type].cost)+cost;u.level=(u.level||1)+1;
+  const grown=Math.round(u.maxHp*BATTLE.upgrade.hpMultiplier);u.hp+=grown-u.maxHp;u.maxHp=grown;
+  this.effect('summon',SLOTS[u.slot],{color:'#ffe07a'});this.event('upgrade',{unitType:u.type,slot:id,level:u.level,text:TYPES[u.type].name+' 升至 '+u.level+' 级'});return true;
+ }
  unitAction(id,action,target){
-  if(this.mode!=='running')return false;const u=this.units.find(u=>u.slot===id);if(!u||u.destination!==undefined)return false;
+  if(this.mode!=='running')return false;const u=this.units.find(u=>u.slot===id);if(!u)return false;
   if(action==='turn'){u.dir*=-1;u.fixedDir=u.dir;u.brace=UNIT_STATS.lancer.braceTime;u.shieldReady=UNIT_STATS.shieldbearer.turnRecovery;return true;}
-  if(action==='fold'&&u.variant==='fold'&&u.folds<2){u.folds++;u.folded=u.folds===1;u.raise=u.folded?0:UNIT_STATS.barricade.raiseTime;return true;}
-  if(action==='swap'&&u.type==='shieldbearer'&&!u.variant&&!(u.swapCooldown>0)){
-   const v=this.units.find(v=>v.slot===target),d=v&&TYPES[v.type];if(!v||d.unique||d.device||d.trap||d.tactic||!d.damage||v.destination!==undefined||SLOTS[v.slot].floor!==SLOTS[u.slot].floor||Math.abs(SLOTS[v.slot].col-SLOTS[u.slot].col)!==1)return false;
+  if(action==='swap'&&u.type==='shieldbearer'&&!(u.swapCooldown>0)){
+   const v=this.units.find(v=>v.slot===target),d=v&&TYPES[v.type];if(!v||d.unique||d.device||d.trap||d.tactic||!d.damage||SLOTS[v.slot].floor!==SLOTS[u.slot].floor||Math.abs(SLOTS[v.slot].col-SLOTS[u.slot].col)!==1)return false;
    const a=SLOTS[u.slot].s,b=SLOTS[v.slot].s;if(this.enemies.some(e=>grounded(e)&&e.s>=Math.min(a,b)&&e.s<=Math.max(a,b)))return false;
    [u.slot,v.slot]=[v.slot,u.slot];u.swapCooldown=UNIT_STATS.shieldbearer.swapCooldown;u.shieldReady=UNIT_STATS.shieldbearer.turnRecovery;v.brace=UNIT_STATS.lancer.braceTime;this.effect('summon',SLOTS[u.slot],{color:'#b7d5c8'});return true;
   }return false;
  }
  effect(kind,p,extra={}){this.effects.push({kind,x:p.x,y:p.y,life:.65,maxLife:.65,...extra});}
- zone(kind,slot,life,radius,extra={}){if(extra.source)this.effects=this.effects.filter(e=>e.zoneSource!==extra.source);this.effects.push({kind,floor:slot.floor,s:slot.s,x:slot.x,y:slot.y,life,maxLife:life,radius,zoneSource:extra.source,...extra});}
+ zone(kind,slot,life,radius,extra={}){this.effects.push({kind,floor:slot.floor,s:slot.s,x:slot.x,y:slot.y,life,maxLife:life,radius,...extra});}
  areaTargets({floor,x,radius}){return this.enemies.filter(e=>{const p=locate(e.s);return grounded(e)&&p.floor===floor&&Math.abs(p.x-x)<=radius;});}
  activateMechanism(id){
   const m=this.mechanisms.find(m=>m.id===id);if(this.mode!=='running'||!m||m.used||this.bestProgress<m.at)return false;
   if(id==='rockfall'){
    const target=m.targetSlot;if(!target)return false;
    this.effect('rockfall',target,{floor:target.floor,s:target.s,fromY:m.slot.y,fallTime:m.fallTime,damage:m.damage,stun:m.stun,life:m.fallTime+.6,maxLife:m.fallTime+.6,radius:m.radius,resolved:false});
-  }else if(id==='fire-barrel'){
-   this.zone('oil',m.slot,m.duration,m.radius,{damage:m.damage,hideProp:true});
-   this.effect('roar',m.slot,{color:'#ff8b43'});
   }else if(id==='war-gong'){
    const targets=this.enemies.filter(e=>live(e)&&locate(e.s).floor===m.slot.floor&&Math.abs(e.s-m.slot.s)<=m.radius);
    if(!targets.length){this.event('notice',{text:'范围内没有追兵'});return false;}
@@ -184,13 +179,23 @@ export class Game{
   if(this.level.escape&&this.ferryStartedAt===null&&this.bestProgress>=this.level.escape.at){this.ferryStartedAt=this.time;this.liu.dash=0;this.event('defense-start');}
   const wasReady=this.ferryReady;this.ferryReady=this.ferryStartedAt!==null&&this.time-this.ferryStartedAt>=this.level.escape.wait;
   if(this.ferryReady&&!wasReady)this.event('defense-end');
+  const cc=this.level.caocao;
+  if(cc&&!this.caocao&&this.bestProgress>=cc.at)this.summonCaocao(cc);
  }
- spawn(role='soldier'){
+ spawn(role='soldier',at){
   if(this.spawned>=this.enemyLimit||!ENEMY_TYPES[role])return null;const d=ENEMY_TYPES[role];
-  const e={id:++this.serial,s:this.caozhangGateOpen?this.gate.s:0,hp:d.hp,maxHp:d.hp,role,type:d.boss?role:['shield','drummer'].includes(role)?'enemyHeavy':'enemy',boss:!!d.boss,heavy:role==='shield',runner:role==='runner',speed:d.speed,damage:d.damage,cooldown:BATTLE.enemy.attackDelay,skillCooldown:d.abilityDelay??BATTLE.enemy.abilityDelay,guard:0,dash:0,buff:0,bounty:0,windup:0,charge:0,exhausted:0,stun:0,root:0,suppress:0,attack:0,hit:0,slow:0,carrying:false,moving:true,direction:1,facing:1,walk:0,escaped:false,popDamage:0,nextPop:0};
-  if(d.boss){if(!this.caozhangGateOpen)e.s=Math.max(0,this.liu.s-BATTLE.enemy.bossDistance);this.commanders.add(role);this.event('commander',{hero:role,skill:COMMANDERS[role].skill,color:d.color});}
+  const e={id:++this.serial,s:at??(this.caozhangGateOpen?this.gate.s:0),hp:d.hp,maxHp:d.hp,role,type:d.boss?role:['shield','drummer'].includes(role)?'enemyHeavy':'enemy',boss:!!d.boss,heavy:role==='shield',runner:role==='runner',speed:d.speed,damage:d.damage,cooldown:BATTLE.enemy.attackDelay,skillCooldown:d.abilityDelay??BATTLE.enemy.abilityDelay,guard:0,dash:0,buff:0,bounty:0,windup:0,charge:0,exhausted:0,stun:0,root:0,attack:0,hit:0,slow:0,carrying:false,moving:true,direction:1,facing:1,walk:0,escaped:false,popDamage:0,nextPop:0};
+  if(d.boss){if(at===undefined&&!this.caozhangGateOpen)e.s=Math.max(0,this.liu.s-BATTLE.enemy.bossDistance);this.commanders.add(role);this.event('commander',{hero:role,skill:COMMANDERS[role].skill,color:d.color});}
   this.enemies.push(e);this.spawned++;if(role==='airborne')this.airborneSpawned++;else this.groundSpawned++;
   if(this.spawned===this.enemyLimit)this.event('notice',{text:'最后一拨追兵！'});return e;
+ }
+ // 曹操亲至: he walks in at the street entrance and every Cao soldier on the map takes the drummer buff once.
+ summonCaocao(cfg){
+  this.enemyLimit++;const e=this.spawn('caocao',0);if(!e)return;
+  this.caocao=e;e.objective='sweep';
+  for(const f of this.enemies)if(live(f)&&f!==e)f.buff=Math.max(f.buff,cfg.rally);
+  this.shake=.4;this.bark('曹操……他亲自来了！',true);
+  this.event('caocao',{text:'曹操亲至 · 全军加速 · 被他碰到直接判负'});
  }
  dropEnemy(e){
   const drops=this.level.drops,preferred=drops?.slots[(this.airborneSpawned-1)%drops.slots.length];
@@ -199,11 +204,11 @@ export class Game{
   if(!s){e.escaped=true;return;}e.s=s.s;e.airborne=drops.warning;e.dropDuration=e.airborne;e.moving=false;
  }
  exitS(){return this.caozhangGateOpen?this.gate.s:0;}
- checkCarrierExit(e,from=e.s){if(this.mode!=='running'||!live(e)||!e.carrying||this.liu.carrier!==e.id)return false;const exit=this.exitS();if(Math.min(from,e.s)>exit||Math.max(from,e.s)<exit)return false;e.s=exit;this.liu.s=exit;this.lossReason=this.caozhangGateOpen?'caozhang-gate':'entrance';this.mode='lost';this.event('lost',{reason:this.lossReason});return true;}
+ checkCarrierExit(e,from=e.s){if(this.mode!=='running'||!live(e)||!e.carrying||this.liu.carrier!==e.id)return false;const exit=this.exitS();if(Math.min(from,e.s)>exit||Math.max(from,e.s)<exit)return false;e.s=exit;this.liu.s=exit;this.lossReason=this.caozhangGateOpen?'caozhang-gate':'entrance';this.mode='lost';
+  const blame=this.lossBlame;this.event('lost',{reason:this.lossReason,text:blame?`${ENEMY_TYPES[blame.role]?.name||'追兵'}在${this.level.floors[blame.floor]||'路上'}抓住主公，押到${this.caozhangGateOpen?'登岸口':'入口'}`:undefined});return true;}
  moveEnemy(e,s){const old=e.s;e.s=Math.max(0,Math.min(ROUTE_LENGTH,s));if(e.carrying)this.liu.s=e.s;return this.checkCarrierExit(e,old);}
- push(e,s){const p=locate(e.s);if(p.floor<0)return false;const seg=SEGMENTS[p.floor*2];return this.moveEnemy(e,Math.max(seg.start,Math.min(seg.start+seg.len,s)));}
- interrupt(e,seconds=1){e.stun=Math.max(e.stun,seconds);e.guard=0;e.dash=0;e.charge=0;e.windup=0;e.commandWindup=0;e.exhausted=Math.max(e.exhausted,BATTLE.interruptRecovery);}
- releaseTether(u){for(const e of this.enemies)if(e.tether===u.id)e.tether=null;}
+ push(e,s){if(sweeper(e))return false;const p=locate(e.s);if(p.floor<0)return false;const seg=SEGMENTS[p.floor*2];return this.moveEnemy(e,Math.max(seg.start,Math.min(seg.start+seg.len,s)));}
+ interrupt(e,seconds=1,keepGuard=false){if(sweeper(e))return;e.stun=Math.max(e.stun,seconds);if(!keepGuard)e.guard=0;e.dash=0;e.charge=0;e.windup=0;e.commandWindup=0;e.exhausted=Math.max(e.exhausted,BATTLE.interruptRecovery);}
  inSmoke(s){return this.effects.some(f=>f.kind==='smoke'&&f.life>0&&locate(s).floor===f.floor&&Math.abs(s-f.s)<f.radius);}
  setArmyDirection(){
   const exit=this.exitS(),lo=Math.min(exit,this.liu.s),hi=Math.max(exit,this.liu.s),obstacles=this.liu.carrier?this.units.filter(u=>this.blocks(u)&&SLOTS[u.slot].s>=lo&&SLOTS[u.slot].s<=hi):[];
@@ -211,19 +216,19 @@ export class Game{
    if(e.lastSeen===undefined||!this.inSmoke(this.liu.s)||Math.abs(e.s-this.liu.s)<BATTLE.enemy.smokeRevealDistance)e.lastSeen=this.liu.s;e.goalS=e.lastSeen;
    if(this.liu.carrier){if(e.carrying){e.objective='carry';e.goalS=exit;}else{const u=obstacles.reduce((a,u)=>!a||Math.abs(SLOTS[u.slot].s-e.s)<Math.abs(SLOTS[a.slot].s-e.s)?u:a,null);e.objective=u?'clear-path':'escort';e.goalS=u?SLOTS[u.slot].s:this.liu.s;}}
    else if(!e.boss&&!e.carrying){
-    const lure=this.units.find(u=>u.type==='lure'&&u.hp>0&&Math.abs(SLOTS[u.slot].s-e.s)<TACTIC_STATS.lure.radius);
     const taunt=this.units.find(u=>u.id===e.tauntedBy&&u.hp>0);
     if(e.taunt>0&&taunt){e.goalS=SLOTS[taunt.slot].s;e.objective='taunt';}
-    else if(lure&&!e.charge){e.goalS=SLOTS[lure.slot].s;e.objective='lure';}
     else if(this.decoy?.carrier===e.id){e.goalS=0;e.objective='decoy-carry';}
     else if(this.decoy&&!this.decoy.carrier&&Math.abs(this.decoy.s-e.s)<this.decoy.radius){e.goalS=this.decoy.s;e.objective='decoy';}
     else {const chosen=this.enemies.find(f=>f.bounty>0&&grounded(f));if(chosen&&chosen!==e){const blocker=this.units.filter(u=>this.blocks(u)&&SLOTS[u.slot].s>chosen.s&&SLOTS[u.slot].s<this.liu.s).sort((a,b)=>Math.abs(SLOTS[a.slot].s-e.s)-Math.abs(SLOTS[b.slot].s-e.s))[0];if(blocker){e.goalS=SLOTS[blocker.slot].s;e.objective='clear-path';}}}
    }
+   // 曹操 ignores smoke, decoys and the escort: he walks straight at Liu Bei, carried or not.
+   if(sweeper(e)){e.objective='sweep';e.goalS=this.liu.s;}
    const direction=Math.sign(e.goalS-e.s)||e.direction;if(direction!==e.direction){e.guard=0;e.turning=BATTLE.enemy.turnDelay;e.direction=direction;}e.facing=locate(e.s).dir*e.direction;
   }
  }
- blocks(u){return u.hp>0&&!TYPES[u.type].trap&&u.destination===undefined&&!u.folded&&!(u.raise>0)&&!(u.variant==='cage'&&u.caught);}
- capture(e){this.captures++;this.liu.carrier=e.id;e.carrying=true;e.dash=0;e.charge=0;this.liu.s=e.s;this.liu.dash=0;this.shake=.3;this.event('capture',{text:'主公被抓！'});this.setArmyDirection();this.checkCarrierExit(e);}
+ blocks(u){return u.hp>0&&!TYPES[u.type].trap;}
+ capture(e){this.captures++;this.liu.carrier=e.id;e.carrying=true;e.dash=0;e.charge=0;this.liu.s=e.s;this.liu.dash=0;this.shake=.3;this.lossBlame={role:e.role,floor:locate(e.s).floor};this.event('capture',{text:'主公被抓！'});this.setArmyDirection();this.checkCarrierExit(e);}
  summonGuard(){if(this.mode!=='running'||this.guardUsed)return false;this.guardUsed=true;const p=locate(this.liu.s);this.effects.push({kind:'guard-arrival',...p,s:this.liu.s,life:3.6,maxLife:3.6,landed:false});this.event('skill',{hero:'zhaoyun',skill:'护驾！',color:'#adddf7'});return true;}
  landGuard(f){f.landed=true;f.s=this.liu.s;Object.assign(f,locate(f.s));for(const e of [...this.enemies])if(grounded(e)&&Math.abs(e.s-f.s)<BATTLE.guard.radius){this.interrupt(e,BATTLE.guard.stun);this.damage(e,BATTLE.guard.damage,'magic',true,f.s);}if(this.liu.carrier){const e=this.enemies.find(e=>e.id===this.liu.carrier);if(e)e.carrying=false;this.liu.carrier=null;this.rescues++;this.event('rescue',{text:'赵子龙救回主公！'});}this.effect('guard-impact',f);this.event('guard-land');}
  damage(e,amount,kind='physical',big=false,originS){
@@ -239,12 +244,12 @@ export class Game{
   e.carrying=false;return true;
  }
  targets(u,skill=false){
-  const d=this.types[u.type],slot=SLOTS[u.slot],air=u.type==='archer'&&!u.variant;
-  const fixed=u.type==='ballista'||u.type==='shieldbearer'||u.variant==='line-lance';
-  const reach=skill?d.skillRange:d.range+(d.ranged?BATTLE.hitRadius:0);
+  const d=this.types[u.type],slot=SLOTS[u.slot],air=u.type==='archer';
+  const fixed=u.type==='ballista'||u.type==='shieldbearer';
+  const reach=skill?d.skillRange:d.range+(this.perk(u)?.range||0)+(d.ranged?BATTLE.hitRadius:0);
   return this.enemies.filter(e=>live(e)&&(grounded(e)||air||skill&&u.type==='zhugeliang'&&!u.variant)&&locate(e.s).floor===slot.floor&&Math.abs(e.s-slot.s)<=reach&&(!fixed||(locate(e.s).x-slot.x)*u.fixedDir>=0)&&(!d.ranged||(!this.inSmoke(slot.s)&&!this.inSmoke(e.s)))).sort((a,b)=>{
-   const rank=e=>u.variant==='flag-hunter'?(['drummer','caohong'].includes(e.role)?0:1):e.carrying?0:air&&e.airborne>0?1:(u.type==='slinger'&&['drummer','caohong'].includes(e.role)||e.bounty>0)?2:3;
-   return rank(a)-rank(b)||Number((b.mark||0)>0)-Number((a.mark||0)>0)||Math.abs(a.s-slot.s)-Math.abs(b.s-slot.s);
+   const rank=e=>e.carrying?0:air&&e.airborne>0?1:e.bounty>0?2:3;
+   return rank(a)-rank(b)||Math.abs(a.s-slot.s)-Math.abs(b.s-slot.s);
   });
  }
  useSkill(type){
@@ -254,38 +259,41 @@ export class Game{
   const slot=SLOTS[u.slot],primary=targets[0],dir=Math.sign(locate(primary.s).x-slot.x)||u.dir;u.dir=dir;
   this.heroCooldowns[type]=d.skillTime;u.skillCooldown=d.skillTime;u.attack=u.attackDuration=d.castTime;u.casting=d.castTime;
   const forward=e=>(locate(e.s).x-slot.x)*dir>=0;
-  let area=type==='zhugeliang'?targets.filter(e=>Math.abs(e.s-primary.s)<d.skillRadius):targets;
+  const area=type==='zhugeliang'?targets.filter(e=>Math.abs(e.s-primary.s)<d.skillRadius):targets;
+  const skillDamage=d.skillDamage*this.unitPower(u),perk=this.perk(u);
   if(type==='zhangfei'){
-   if(u.variant==='line-roar')area=targets.filter(forward);
    if(u.variant==='taunt'){for(const e of area){e.taunt=VARIANT_RULES.taunt.duration;e.tauntedBy=u.id;}}
-   else for(const e of area){this.interrupt(e,d.stunDuration);this.damage(e,d.skillDamage,'magic',true,slot.s);}
+   else for(const e of area){this.interrupt(e,d.stunDuration);this.damage(e,skillDamage,'magic',true,slot.s);}
    u.guard=d.guardDuration;
+   if(perk){u.hp=Math.min(u.maxHp,u.hp+u.maxHp*perk.heal);this.effect('hit',{x:slot.x,y:slot.y-90},{value:Math.round(u.maxHp*perk.heal),color:'#9be48a'});}
   }else if(type==='guanyu'){
-   if(u.variant==='hook'){const e=targets.find(forward);if(e){e.guard=0;if(!this.push(e,e.s+Math.sign(slot.s-e.s)*Math.min(VARIANT_RULES.hook.distance,Math.max(0,Math.abs(e.s-slot.s)-BATTLE.hookStopDistance))))this.damage(e,d.skillDamage,'physical',true,slot.s);}}
-   else for(const e of area.filter(e=>u.variant==='spin'||forward(e))){e.guard=0;e.shieldBroken=BATTLE.shieldBreakDuration;this.damage(e,d.skillDamage,'physical',true,slot.s);}
-  }else if(u.variant==='wind-wall'){
-   const p=locate(primary.s);this.zone('wind-wall',{...p,s:primary.s},VARIANT_RULES['wind-wall'].duration,VARIANT_RULES['wind-wall'].radius,{source:u.id});
+   if(u.variant==='hook'){const e=targets.find(forward);if(e){e.guard=0;if(!this.push(e,e.s+Math.sign(slot.s-e.s)*Math.min(VARIANT_RULES.hook.distance,Math.max(0,Math.abs(e.s-slot.s)-BATTLE.hookStopDistance))))this.damage(e,skillDamage,'physical',true,slot.s);}}
+   else for(const e of area.filter(forward)){e.guard=0;e.shieldBroken=BATTLE.shieldBreakDuration;this.damage(e,skillDamage,'physical',true,slot.s);}
   }else for(const e of area){
    if(e.airborne>0){if(!u.variant)this.push(e,e.s+Math.sign(e.s-slot.s)*d.knockback);continue;}
    const dest=u.variant==='gather'?primary.s:e.s+(Math.sign(e.s-slot.s)||-1)*d.knockback;
-   if(this.push(e,dest))break;e.slow=d.slowDuration;this.damage(e,d.skillDamage,'magic',true,slot.s);
+   if(this.push(e,dest))break;e.slow=d.slowDuration;this.damage(e,skillDamage,'magic',true,slot.s);
   }
   const center=type==='zhugeliang'?locate(primary.s):slot;this.effect(type==='zhangfei'?'roar':type==='guanyu'?'dragon':'gust',center,{dir,color:d.color,life:.8,maxLife:.8});
   this.event('skill',{hero:type,skill:d.skill,color:d.color});return true;
  }
  hurtUnit(u,amount,enemy){
   if(u.hp<=0)return;
-  if(u.type==='shieldbearer'&&u.shieldReady<=0&&!(u.swapCooldown>UNIT_STATS.shieldbearer.swapCooldown-UNIT_STATS.shieldbearer.turnRecovery)&&enemy&&(u.variant==='double-shield'||(locate(enemy.s).x-SLOTS[u.slot].x)*u.fixedDir>=0)){
-   u.shieldReady=UNIT_STATS.shieldbearer.blockCooldown;this.effect('hit',SLOTS[u.slot],{value:0,blocked:true,color:'#e9c366'});return;
+  const perk=this.perk(u);
+  if(u.type==='shieldbearer'&&u.shieldReady<=0&&!(u.swapCooldown>UNIT_STATS.shieldbearer.swapCooldown-UNIT_STATS.shieldbearer.turnRecovery)&&enemy&&(locate(enemy.s).x-SLOTS[u.slot].x)*u.fixedDir>=0){
+   u.shieldReady=UNIT_STATS.shieldbearer.blockCooldown;this.effect('hit',SLOTS[u.slot],{value:0,blocked:true,color:'#e9c366'});
+   if(perk&&live(enemy))this.interrupt(enemy,perk.stun,true);
+   return;
   }
   u.hp-=amount*(u.guard>0?this.types[u.type].guardDamageMultiplier:1);u.hit=.16;this.effect('hit',{x:SLOTS[u.slot].x,y:SLOTS[u.slot].y-65},{value:Math.round(amount),color:'#ff927f'});
-  if(u.hp<=0){this.releaseTether(u);this.event('fallen',{unitType:u.type,slot:u.slot});}
+  if(perk?.thorns&&enemy&&live(enemy))this.damage(enemy,perk.thorns,'impact',false);
+  if(u.hp<=0)this.event('fallen',{unitType:u.type,slot:u.slot});
  }
  enemySkill(e){
   if(e.skillCooldown>0||e.stun>0||e.airborne>0||e.carrying||e.commandWindup>0||e.windup>0)return;
   const d=ENEMY_TYPES[e.role],friends=this.enemies.filter(f=>grounded(f)&&f!==e&&locate(f.s).floor===locate(e.s).floor&&Math.abs(f.s-e.s)<d.commandRadius);
   if(e.role==='shield'&&!(e.shieldBroken>0)&&!(e.turning>0)){e.guard=d.guardDuration;e.skillCooldown=d.skillCooldown;}
-  else if(e.role==='runner'&&e.moving&&!e.noDash){e.windup=d.windup;e.skillCooldown=d.skillCooldown;}
+  else if(e.role==='runner'&&e.moving){e.windup=d.windup;e.skillCooldown=d.skillCooldown;}
   else if(e.role==='drummer'&&friends.length&&!this.liu.carrier){e.commandWindup=d.windup;e.skillCooldown=d.skillCooldown;for(const f of friends)f.rallyTo=e.id;}
   else if(e.role==='caohong'&&friends.some(f=>!f.boss)&&!this.liu.carrier){e.commandWindup=d.windup;e.skillCooldown=d.skillCooldown;}
   else if(e.role==='xiahou'&&!this.liu.carrier&&!(e.exhausted>0)&&locate(e.s).floor>=0){e.windup=d.windup;e.skillCooldown=d.skillCooldown;}
@@ -296,27 +304,20 @@ export class Game{
   else {const target=friends.filter(f=>!f.boss).sort((a,b)=>Math.abs(a.s-this.liu.s)-Math.abs(b.s-this.liu.s))[0];if(target){target.bounty=d.bountyDuration;this.effect('drum',locate(target.s),{color:'#f5ca70'});}}
  }
  fire(u,target){
-  const d=this.types[u.type],slot=SLOTS[u.slot],p=locate(target.s);
+  const d=this.types[u.type],slot=SLOTS[u.slot],p=locate(target.s),damage=d.damage*this.unitPower(u),perk=this.perk(u);
   u.cooldown=d.interval;u.attack=u.attackDuration=.4;
-  if(u.type==='slinger'||u.type==='catapult'){
-   const small=u.type==='slinger',flight=d.flightTime;
-   this.effects.push({kind:'stone',floor:slot.floor,source:u.id,sourceS:slot.s,variant:u.variant,targetId:target.id,damage:d.damage,radius:d.splashRadius,small,x:slot.x,y:slot.y-72,tx:p.x,ty:p.y-60,s:target.s,life:flight,maxLife:flight});
+  if(u.type==='catapult'){
+   const flight=d.flightTime;
+   this.effects.push({kind:'stone',floor:slot.floor,source:u.id,sourceS:slot.s,targetId:target.id,damage,radius:d.splashRadius*(perk?.splash||1),small:false,x:slot.x,y:slot.y-72,tx:p.x,ty:p.y-60,s:target.s,life:flight,maxLife:flight});
   }else if(u.type==='ballista'){
    const targets=this.targets(u).filter(e=>Math.abs(e.s-slot.s)>=(d.minRange||0)).sort((a,b)=>Math.abs(a.s-slot.s)-Math.abs(b.s-slot.s));
-   for(const e of targets){
-    if(u.variant==='tow'){const sign=Math.sign(slot.s-e.s),obstacle=this.units.some(v=>v!==u&&this.blocks(v)&&(SLOTS[v.slot].s-e.s)*sign>0&&(slot.s-SLOTS[v.slot].s)*sign>0);if(!obstacle)this.push(e,e.s+sign*Math.min(VARIANT_RULES.tow.distance,Math.max(0,Math.abs(e.s-slot.s)-BATTLE.hookStopDistance)));break;}
-    if(u.variant==='shield-break'){e.guard=0;e.shieldBroken=BATTLE.shieldBreakDuration;this.damage(e,d.damage,'arrow',false,slot.s);break;}
-    const hit=this.damage(e,d.damage,'arrow',false,slot.s);if(!hit)break;
-   }
+   for(const e of targets){const hit=this.damage(e,damage,perk?.pierceGuard?'bolt':'arrow',false,slot.s);if(!hit)break;}
    this.effect('thrust',{x:slot.x,y:slot.y-60},{tx:slot.x+u.fixedDir*d.range,ty:slot.y-60,dir:u.fixedDir,color:d.color});
   }else if(d.ranged){
-   const targets=u.variant==='spread'?this.targets(u).filter(e=>(locate(e.s).x-slot.x)*u.dir>=0).slice(0,VARIANT_RULES.spread.targets):[target];
-   for(const e of targets)this.effects.push({kind:u.type==='zhugeliang'?'feather':'arrow',target:e.id,source:u.id,sourceS:slot.s,unitType:u.type,variant:u.variant,damage:d.damage,x:slot.x+u.dir*24,y:slot.y-78,tx:locate(e.s).x,ty:locate(e.s).y-60,dir:u.dir,color:d.color,life:BATTLE.projectile.arrowFlight,maxLife:BATTLE.projectile.arrowFlight,antiAir:e.airborne>0});
-   if(d.burstCount){u.burst=(u.burst||0)+1;if(u.burst<d.burstCount)u.cooldown=d.burstInterval;else u.burst=0;}
+   this.effects.push({kind:u.type==='zhugeliang'?'feather':'arrow',target:target.id,source:u.id,sourceS:slot.s,unitType:u.type,damage,x:slot.x+u.dir*24,y:slot.y-78,tx:p.x,ty:p.y-60,dir:u.dir,color:d.color,life:BATTLE.projectile.arrowFlight,maxLife:BATTLE.projectile.arrowFlight,antiAir:target.airborne>0});
   }else{
-   if(u.variant==='lance-hook')this.push(target,target.s+Math.sign(slot.s-target.s)*Math.min(VARIANT_RULES["lance-hook"].distance,Math.max(0,Math.abs(slot.s-target.s)-BATTLE.hookStopDistance)));
-   this.damage(target,d.damage,'physical',false,slot.s);
-   if(u.type==='guanyu'||u.variant==='line-lance'){const second=this.targets(u).find(e=>e!==target&&Math.abs(e.s-target.s)<BATTLE.cleaveRadius);if(second)this.damage(second,d.damage*BATTLE.cleaveMultiplier,'physical',false,slot.s);}
+   this.damage(target,damage,'physical',false,slot.s);
+   if(u.type==='guanyu'){for(const second of this.targets(u).filter(e=>e!==target&&Math.abs(e.s-target.s)<BATTLE.cleaveRadius).slice(0,perk?.cleaveTargets||1))this.damage(second,damage*BATTLE.cleaveMultiplier,'physical',false,slot.s);}
    this.effect(u.type==='lancer'?'thrust':'slash',{x:slot.x,y:slot.y-65},{tx:p.x,ty:p.y-55,dir:u.dir,color:d.color});
   }
   this.event('attack',{unitType:u.type,slot:u.slot,target:target.id});
@@ -326,23 +327,11 @@ export class Game{
   if(f.kind==='arrow'&&!f.antiAir){const sign=Math.sign(e.s-f.sourceS);const screen=this.enemies.filter(s=>grounded(s)&&s.guard>0&&locate(s.s).floor===locate(e.s).floor&&(s.s-f.sourceS)*sign>=0&&(e.s-s.s)*sign>=0&&(f.sourceS-s.s)*s.direction>0).sort((a,b)=>Math.abs(a.s-f.sourceS)-Math.abs(b.s-f.sourceS))[0];if(screen)e=screen;}
   if(f.antiAir){e.airborne=0;e.parachuteBroken=true;this.effect('parachute-break',locate(e.s),{life:.8,maxLife:.8});this.interrupt(e,BATTLE.projectile.antiAirStun);this.damage(e,f.damage,'anti-air',false,f.sourceS);return;}
   const hit=this.damage(e,f.damage,f.kind==='feather'?'magic':'arrow',false,f.sourceS);
-  if(!hit||!live(e)){if(f.unitType==='crossbowman'){const u=this.units.find(u=>u.id===f.source);if(u)u.chain=0;}return;}
-  if(f.variant==='signal'){for(const other of this.enemies)if(other.markSource===f.source)other.mark=0;e.mark=VARIANT_RULES.signal.duration;e.markSource=f.source;}
-  if(f.unitType==='crossbowman'){
-   const u=this.units.find(u=>u.id===f.source);if(!u)return;
-   u.chain=u.chainTarget===e.id?(u.chain||0)+1:1;u.chainTarget=e.id;
-   if(u.chain>=this.types[u.type].burstCount){if(f.variant==='suppress')e.suppress=VARIANT_RULES.suppress.duration;else e.root=this.types[u.type].rootDuration;u.chain=0;}
-  }
+  if(hit&&f.kind==='feather'&&live(e)){const perk=this.perk(this.units.find(u=>u.id===f.source));if(perk?.slow)e.slow=Math.max(e.slow,perk.slow);}
  }
  resolveStone(f){
-  const p=locate(f.s),slot={...p,s:f.s};
-  if(['scatter-stones','rubble','net'].includes(f.variant)){
-   if(f.variant==='net'){for(const e of this.enemies)if(grounded(e)&&locate(e.s).floor===f.floor&&Math.abs(e.s-f.s)<f.radius)e.root=VARIANT_RULES.net.duration;}
-   else this.zone(f.variant,slot,VARIANT_RULES[f.variant].duration,f.radius,{source:f.source});return;
-  }
   const area=this.enemies.filter(e=>grounded(e)&&locate(e.s).floor===f.floor&&Math.abs(e.s-f.s)<f.radius);
-  const targets=f.variant==='command-break'?area.filter(e=>e.id===f.targetId):area;
-  for(const e of targets){if(!f.small)this.interrupt(e,UNIT_STATS.catapult.stunDuration);if(f.variant==='command-break'&&e.commandWindup>0)this.interrupt(e,VARIANT_RULES["command-break"].stun);this.damage(e,f.damage,'impact',!f.small,f.sourceS);}
+  for(const e of area){this.interrupt(e,UNIT_STATS.catapult.stunDuration);this.damage(e,f.damage,'impact',true,f.sourceS);}
   this.effect('landing',{x:f.tx,y:f.ty+60});
  }
  updateEffects(dt){
@@ -353,17 +342,14 @@ export class Game{
     f.resolved=true;for(const e of this.areaTargets(f)){this.interrupt(e,f.stun);this.damage(e,f.damage,'impact',true,f.s);}
    }
    else if(f.kind==='log'){
-    const old=f.x;if(f.variant==='return-log'&&!f.returning&&f.life<f.maxLife/2){f.returning=true;f.dir*=-1;}
+    const old=f.x;
     f.x+=f.dir*UNIT_STATS.log.speed*dt;
-    for(const e of this.enemies){const p=locate(e.s),set=f.returning?f.returnHit:f.hit;if(!grounded(e)||p.floor!==f.floor||p.x<Math.min(old,f.x)-UNIT_STATS.log.hitRadius||p.x>Math.max(old,f.x)+UNIT_STATS.log.hitRadius||set.has(e.id))continue;set.add(e.id);
-     if(!f.returning)this.damage(e,this.types.log.damage,'impact',true);if(live(e)&&(!f.variant||f.returning)){this.interrupt(e,UNIT_STATS.log.stunDuration);if(this.push(e,e.s+f.dir*locate(e.s).dir*UNIT_STATS.log.knockback))return;}
+    for(const e of this.enemies){const p=locate(e.s);if(!grounded(e)||p.floor!==f.floor||p.x<Math.min(old,f.x)-UNIT_STATS.log.hitRadius||p.x>Math.max(old,f.x)+UNIT_STATS.log.hitRadius||f.hit.has(e.id))continue;f.hit.add(e.id);
+     this.damage(e,this.types.log.damage,'impact',true);if(live(e)){this.interrupt(e,UNIT_STATS.log.stunDuration);if(this.push(e,e.s+f.dir*locate(e.s).dir*UNIT_STATS.log.knockback))return;}
     }
-   }else if(['oil','sticky','fire-line','wind-wall','scatter-stones','rubble'].includes(f.kind)){
+   }else if(f.kind==='oil'){
     for(const e of this.enemies){if(!grounded(e)||locate(e.s).floor!==f.floor||Math.abs(e.s-f.s)>f.radius)continue;
-     if(f.kind==='oil'){e.guard=0;e.shieldBroken=.2;this.damage(e,f.damage*dt,'fire',false,f.s);}
-     else if(f.kind==='sticky'||f.kind==='rubble'){e.noDash=true;e.dash=0;e.charge=0;e.slow=Math.max(e.slow,.15);}
-     else if(f.kind==='scatter-stones'){if(e.dash>0||e.charge>0){this.interrupt(e,VARIANT_RULES["scatter-stones"].stun);f.life=0;break;}}
-     else {this.interrupt(e,VARIANT_RULES[f.kind].stun);f.life=0;break;}
+     e.guard=0;e.shieldBroken=.2;this.damage(e,f.damage*dt,'fire',false,f.s);
     }
    }else if(f.kind==='stone'&&f.life<=0&&!f.resolved){f.resolved=true;this.resolveStone(f);}
    else if((f.kind==='arrow'||f.kind==='feather')&&f.target){const e=this.enemies.find(e=>e.id===f.target&&live(e));if(e){const p=locate(e.s);f.tx=p.x;f.ty=p.y-60;}if(f.life<=0&&!f.resolved){f.resolved=true;this.hitProjectile(f);}}
@@ -373,17 +359,15 @@ export class Game{
  }
  updateUnits(dt){
   for(const u of this.units){const d=this.types[u.type],slot=SLOTS[u.slot];
-   for(const key of ['cooldown','guard','hit','attack','casting','brace','shieldReady','swapCooldown','raise'])u[key]=Math.max(0,(u[key]||0)-dt);
+   for(const key of ['cooldown','guard','hit','attack','casting','brace','shieldReady','swapCooldown'])u[key]=Math.max(0,(u[key]||0)-dt);
    u.skillCooldown=this.heroCooldowns[u.type]||0;
    if(u.hp<=0)continue;
-   if(u.destination!==undefined){const target=SLOTS[u.destination].s,diff=target-u.moveS;u.dir=locate(u.moveS).dir*Math.sign(diff);u.moveS+=Math.sign(diff)*Math.min(Math.abs(diff),BATTLE.redeploySpeed*dt);if(u.moveS===target){u.slot=u.destination;delete u.destination;delete u.moveS;}continue;}
    const nearby=this.enemies.filter(e=>grounded(e)&&locate(e.s).floor===slot.floor&&Math.abs(e.s-slot.s)<BATTLE.trapRadius);
-   if(d.trap){if(nearby.length>=(u.variant==='double-snare'?2:1)){u.hp=0;for(const e of nearby.slice(0,u.variant==='double-snare'?2:1)){if(u.variant==='bell')e.mark=VARIANT_RULES.bell.duration;else this.interrupt(e,d.trapDuration);}this.effect('snare-hit',slot);}continue;}
-   if(u.variant==='cage'||u.variant==='tether'){if(!u.caught){const e=nearby.find(e=>!e.boss);if(e){u.caught=e.id;e.tether=u.id;}}}
+   if(d.trap){if(nearby.length){u.hp=0;this.interrupt(nearby[0],d.trapDuration);this.effect('snare-hit',slot);}continue;}
    if(!d.damage)continue;
-   if(u.type==='lancer'&&!u.variant){if(nearby.length)u.brace=d.braceTime;else if(u.brace<=0){const charger=this.targets(u).find(e=>(e.dash>0||e.charge>0)&&(locate(e.s).x-slot.x)*u.dir>=0);if(charger){this.interrupt(charger,d.braceStun);u.brace=d.braceCooldown;this.effect('thrust',{x:slot.x,y:slot.y-60},{tx:locate(charger.s).x,ty:slot.y-60,dir:u.dir,color:d.color});}}}
+   if(u.type==='lancer'){if(nearby.length)u.brace=d.braceTime;else if(u.brace<=0){const charger=this.targets(u).find(e=>(e.dash>0||e.charge>0)&&(locate(e.s).x-slot.x)*u.dir>=0);if(charger){this.interrupt(charger,d.braceStun);u.brace=d.braceCooldown;this.effect('thrust',{x:slot.x,y:slot.y-60},{tx:locate(charger.s).x,ty:slot.y-60,dir:u.dir,color:d.color});const perk=this.perk(u);if(perk&&this.push(charger,charger.s+(Math.sign(charger.s-slot.s)||1)*perk.knockback))return;}}}
    const targets=this.targets(u);if(!targets.length)continue;
-   if(u.type!=='ballista'&&u.type!=='shieldbearer'&&u.variant!=='line-lance'){const direction=Math.sign(locate(targets[0].s).x-slot.x)||u.dir;if(direction!==u.dir){u.dir=direction;u.brace=UNIT_STATS.lancer.braceTime;}}
+   if(u.type!=='ballista'&&u.type!=='shieldbearer'){const direction=Math.sign(locate(targets[0].s).x-slot.x)||u.dir;if(direction!==u.dir){u.dir=direction;u.brace=UNIT_STATS.lancer.braceTime;}}
    const target=targets.find(e=>Math.abs(e.s-slot.s)>=(d.minRange||0));if(!target||u.cooldown>0)continue;this.fire(u,target);if(this.mode!=='running')return;
   }
  }
@@ -391,16 +375,13 @@ export class Game{
   this.setArmyDirection();
   for(const e of this.enemies){if(!grounded(e))continue;
    if(e.carrying&&this.checkCarrierExit(e))return;
-   const tether=this.units.find(u=>u.id===e.tether&&u.hp>0);if(e.tether&&!tether)e.tether=null;
    if(e.stun>0||e.windup>0||e.exhausted>0||e.commandWindup>0){e.moving=false;continue;}
    const p=locate(e.s),dir=e.direction,travel=e.speed*(e.carrying?BATTLE.enemy.carryMultiplier:1)*(e.slow>0?BATTLE.enemy.slowMultiplier:1)*(e.dash>0&&!e.carrying?ENEMY_STATS.runner.dashMultiplier:1)*(e.charge>0?ENEMY_STATS.xiahou.chargeMultiplier:1)*(e.buff>0?ENEMY_STATS.drummer.buffMultiplier:1)*dt;
-   const blocker=tether||this.units.filter(u=>this.blocks(u)&&SLOTS[u.slot].floor===p.floor&&Math.abs(SLOTS[u.slot].s-e.s)<=BATTLE.contactRadius+travel&&(SLOTS[u.slot].s-e.s)*dir>=-14).sort((a,b)=>Math.abs(SLOTS[a.slot].s-e.s)-Math.abs(SLOTS[b.slot].s-e.s))[0];
-   e.moving=!blocker&&e.root<=0&&!e.tether;this.enemySkill(e);if(e.windup>0||e.commandWindup>0)continue;
-   const movingTarget=this.units.find(u=>u.hp>0&&u.moveS!==undefined&&Math.abs(u.moveS-e.s)<BATTLE.movingHitRadius);
-   if(!blocker&&movingTarget&&e.cooldown<=0&&e.suppress<=0){e.cooldown=ENEMY_TYPES[e.role].interval;e.attack=.35;this.hurtUnit(movingTarget,e.damage,e);}
+   const blocker=this.units.filter(u=>this.blocks(u)&&SLOTS[u.slot].floor===p.floor&&Math.abs(SLOTS[u.slot].s-e.s)<=BATTLE.contactRadius+travel&&(SLOTS[u.slot].s-e.s)*dir>=-14).sort((a,b)=>Math.abs(SLOTS[a.slot].s-e.s)-Math.abs(SLOTS[b.slot].s-e.s))[0];
+   e.moving=!blocker&&e.root<=0;this.enemySkill(e);if(e.windup>0||e.commandWindup>0)continue;
    if(blocker){e.facing=Math.sign(SLOTS[blocker.slot].x-p.x)||e.facing;
     if(e.charge>0){this.hurtUnit(blocker,blocker.type==='barricade'?ENEMY_STATS.xiahou.barricadeDamage:ENEMY_STATS.xiahou.chargeDamage);e.charge=0;e.exhausted=ENEMY_STATS.xiahou.recovery;this.effect('roar',p,{color:'#f8875f'});}
-    else if(e.cooldown<=0&&e.suppress<=0){e.cooldown=ENEMY_TYPES[e.role].interval;e.attack=.35;this.hurtUnit(blocker,e.damage,e);}
+    else if(e.cooldown<=0){e.cooldown=ENEMY_TYPES[e.role].interval;e.attack=.35;this.hurtUnit(blocker,e.damage,e);}
    }else if(e.moving){
     const rally=this.enemies.find(r=>r.id===e.rallyTo&&live(r)&&r.commandWindup>0);if(e.rallyTo&&!rally)e.rallyTo=null;
     const goal=rally?rally.s:e.goalS,distance=Math.abs(goal-e.s),stop=e.objective==='escort'?BATTLE.enemy.escortDistance:rally?BATTLE.enemy.rallyDistance:0;
@@ -442,17 +423,22 @@ export class Game{
   for(const pool of [this.cooldowns,this.heroCooldowns])for(const key of Object.keys(pool))pool[key]=Math.max(0,pool[key]-dt);
   this.liu.dash=Math.max(0,this.liu.dash-dt);
   this.bestProgress=Math.max(this.bestProgress,this.liu.s/ROUTE_LENGTH);
-  for(const e of this.enemies){const wind=e.windup>0,command=e.commandWindup>0,charge=e.charge>0;e.noDash=false;
-   for(const key of ['cooldown','skillCooldown','attack','hit','slow','stun','root','suppress','guard','dash','buff','bounty','windup','commandWindup','charge','exhausted','turning','shieldBroken','mark','taunt'])e[key]=Math.max(0,(e[key]||0)-dt);
+  for(const e of this.enemies){const wind=e.windup>0,command=e.commandWindup>0,charge=e.charge>0;
+   for(const key of ['cooldown','skillCooldown','attack','hit','slow','stun','root','guard','dash','buff','bounty','windup','commandWindup','charge','exhausted','turning','shieldBroken','taunt'])e[key]=Math.max(0,(e[key]||0)-dt);
    if(e.stun>0||this.liu.carrier){e.windup=0;e.charge=0;e.commandWindup=0;}
    else {if(wind&&e.windup===0){if(e.role==='runner')e.dash=ENEMY_STATS.runner.dashDuration;else e.charge=ENEMY_STATS.xiahou.chargeDuration;}if(command&&e.commandWindup===0)this.finishCommand(e);if(charge&&e.charge===0)e.exhausted=ENEMY_STATS.xiahou.recovery;}
    if(e.airborne>0){e.airborne=Math.max(0,e.airborne-dt);if(e.airborne===0)this.effect('landing',locate(e.s));}
   }
   this.updatePhases();this.updateEffects(dt);if(this.mode!=='running')return;
-  this.triggerAmbush();
   this.updateUnits(dt);if(this.mode!=='running')return;
   this.updateEnemies(dt);if(this.mode!=='running')return;
-  if(!this.liu.carrier){const e=this.enemies.find(e=>grounded(e)&&e.stun<=0&&!e.tether&&e.objective==='capture'&&Math.abs(e.s-this.liu.s)<BATTLE.contactRadius);if(e)this.capture(e);}
+  // 曹操 reaching Liu Bei, free or carried, ends the run on the spot: no escort walk, no rescue.
+  const cc=this.caocao;
+  if(cc&&live(cc)&&Math.abs(cc.s-this.liu.s)<BATTLE.contactRadius+10){
+   this.liu.carrier=null;for(const e of this.enemies)e.carrying=false;this.liu.s=cc.s;this.lossReason='caocao';this.mode='lost';this.shake=.5;
+   this.event('lost',{reason:'caocao',text:'曹操亲手拿下主公 · '+(this.level.floors[locate(cc.s).floor]||'')});return;
+  }
+  if(!this.liu.carrier){const e=this.enemies.find(e=>grounded(e)&&e.stun<=0&&e.objective==='capture'&&Math.abs(e.s-this.liu.s)<BATTLE.contactRadius);if(e)this.capture(e);}
   if(this.mode!=='running')return;
   this.enemies=this.enemies.filter(live);this.units=this.units.filter(u=>u.hp>0);
   if(!this.liu.carrier){

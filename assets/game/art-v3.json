@@ -1,0 +1,1016 @@
+{
+  "atlases": {
+    "cao-troops-v3": {
+      "url": "assets/game/cao-troops-v3.webp",
+      "cols": 4,
+      "rows": 2,
+      "cell": 512,
+      "width": 2048,
+      "height": 1024,
+      "bytes": 368150,
+      "png": "tools/art/v3/png/cao-troops-v3.png"
+    },
+    "liubei-poses-v1": {
+      "url": "assets/game/liubei-poses-v1.webp",
+      "cols": 2,
+      "rows": 2,
+      "cell": 512,
+      "width": 1024,
+      "height": 1024,
+      "bytes": 162018,
+      "png": "tools/art/v3/png/liubei-poses-v1.png"
+    },
+    "mechanism-states-v1": {
+      "url": "assets/game/mechanism-states-v1.webp",
+      "cols": 4,
+      "rows": 3,
+      "cell": 512,
+      "width": 2048,
+      "height": 1536,
+      "bytes": 473404,
+      "png": "tools/art/v3/png/mechanism-states-v1.png"
+    },
+    "folk-v1": {
+      "url": "assets/game/folk-v1.webp",
+      "cols": 3,
+      "rows": 2,
+      "cell": 512,
+      "width": 1536,
+      "height": 1024,
+      "bytes": 286782,
+      "png": "tools/art/v3/png/folk-v1.png"
+    },
+    "effects-v1": {
+      "url": "assets/game/effects-v1.webp",
+      "cols": 4,
+      "rows": 2,
+      "cell": 512,
+      "width": 2048,
+      "height": 1024,
+      "bytes": 318290,
+      "png": "tools/art/v3/png/effects-v1.png"
+    },
+    "stratagem-icons-v1": {
+      "url": "assets/game/stratagem-icons-v1.webp",
+      "cols": 3,
+      "rows": 1,
+      "cell": 192,
+      "width": 576,
+      "height": 192,
+      "bytes": 35080,
+      "png": "tools/art/v3/png/stratagem-icons-v1.png"
+    },
+    "weather-v1": {
+      "url": "assets/game/weather-v1.webp",
+      "cols": 2,
+      "rows": 2,
+      "cell": 256,
+      "width": 512,
+      "height": 512,
+      "bytes": 52646,
+      "png": "tools/art/v3/png/weather-v1.png"
+    }
+  },
+  "sprites": {
+    "climber": {
+      "atlas": "cao-troops-v3",
+      "tile": 0,
+      "rect": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        37,
+        25,
+        438,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "cao-archer": {
+      "atlas": "cao-troops-v3",
+      "tile": 1,
+      "rect": [
+        512,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        65,
+        461,
+        421
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "fire-raider": {
+      "atlas": "cao-troops-v3",
+      "tile": 2,
+      "rect": [
+        1024,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        52,
+        461,
+        434
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "shield-cart": {
+      "atlas": "cao-troops-v3",
+      "tile": 3,
+      "rect": [
+        1536,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        114,
+        461,
+        372
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "strategist": {
+      "atlas": "cao-troops-v3",
+      "tile": 4,
+      "rect": [
+        0,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        41,
+        461,
+        445
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "water-raider": {
+      "atlas": "cao-troops-v3",
+      "tile": 5,
+      "rect": [
+        512,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        127,
+        461,
+        359
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "cavalry": {
+      "atlas": "cao-troops-v3",
+      "tile": 6,
+      "rect": [
+        1024,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        120,
+        461,
+        366
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "escort-pair": {
+      "atlas": "cao-troops-v3",
+      "tile": 7,
+      "rect": [
+        1536,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        187,
+        461,
+        299
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "liubei-struggle": {
+      "atlas": "liubei-poses-v1",
+      "tile": 0,
+      "rect": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        215,
+        461,
+        271
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "liubei-hide": {
+      "atlas": "liubei-poses-v1",
+      "tile": 1,
+      "rect": [
+        512,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        116,
+        25,
+        281,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "liubei-water-climb": {
+      "atlas": "liubei-poses-v1",
+      "tile": 2,
+      "rect": [
+        0,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        172,
+        461,
+        314
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "liubei-captive": {
+      "atlas": "liubei-poses-v1",
+      "tile": 3,
+      "rect": [
+        512,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        62,
+        25,
+        388,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "well-splash": {
+      "atlas": "mechanism-states-v1",
+      "tile": 0,
+      "rect": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        130,
+        461,
+        356
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "sluice-open": {
+      "atlas": "mechanism-states-v1",
+      "tile": 1,
+      "rect": [
+        512,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        36,
+        25,
+        440,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "log-landed": {
+      "atlas": "mechanism-states-v1",
+      "tile": 2,
+      "rect": [
+        1024,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        253,
+        461,
+        233
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "log-broken": {
+      "atlas": "mechanism-states-v1",
+      "tile": 3,
+      "rect": [
+        1536,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        233,
+        461,
+        253
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "arrow-tower-fire": {
+      "atlas": "mechanism-states-v1",
+      "tile": 4,
+      "rect": [
+        0,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        115,
+        461,
+        371
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "shrine-lot": {
+      "atlas": "mechanism-states-v1",
+      "tile": 5,
+      "rect": [
+        512,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        91,
+        461,
+        395
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "shu-banner": {
+      "atlas": "mechanism-states-v1",
+      "tile": 6,
+      "rect": [
+        1024,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        92,
+        25,
+        328,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "winch-active": {
+      "atlas": "mechanism-states-v1",
+      "tile": 7,
+      "rect": [
+        1536,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        122,
+        461,
+        364
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "hanging-basket": {
+      "atlas": "mechanism-states-v1",
+      "tile": 8,
+      "rect": [
+        0,
+        1024,
+        512,
+        512
+      ],
+      "bbox": [
+        99,
+        25,
+        315,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "prison-cart": {
+      "atlas": "mechanism-states-v1",
+      "tile": 9,
+      "rect": [
+        512,
+        1024,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        124,
+        461,
+        362
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "planks-falling": {
+      "atlas": "mechanism-states-v1",
+      "tile": 10,
+      "rect": [
+        1024,
+        1024,
+        512,
+        512
+      ],
+      "bbox": [
+        54,
+        25,
+        404,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "boulder": {
+      "atlas": "mechanism-states-v1",
+      "tile": 11,
+      "rect": [
+        1536,
+        1024,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        42,
+        461,
+        444
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "refugee-elder": {
+      "atlas": "folk-v1",
+      "tile": 0,
+      "rect": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        73,
+        25,
+        366,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "refugee-mother": {
+      "atlas": "folk-v1",
+      "tile": 1,
+      "rect": [
+        512,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        72,
+        25,
+        369,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "refugee-youth": {
+      "atlas": "folk-v1",
+      "tile": 2,
+      "rect": [
+        1024,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        39,
+        461,
+        447
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "trapped-merchant": {
+      "atlas": "folk-v1",
+      "tile": 3,
+      "rect": [
+        0,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        101,
+        461,
+        385
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "fisherman": {
+      "atlas": "folk-v1",
+      "tile": 4,
+      "rect": [
+        512,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        52,
+        461,
+        434
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "boatman": {
+      "atlas": "folk-v1",
+      "tile": 5,
+      "rect": [
+        1024,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        105,
+        461,
+        381
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "fire-wall-0": {
+      "atlas": "effects-v1",
+      "tile": 0,
+      "rect": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        225,
+        461,
+        261
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "fire-wall-1": {
+      "atlas": "effects-v1",
+      "tile": 1,
+      "rect": [
+        512,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        225,
+        461,
+        261
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "fire-wall-2": {
+      "atlas": "effects-v1",
+      "tile": 2,
+      "rect": [
+        1024,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        225,
+        461,
+        261
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "mud": {
+      "atlas": "effects-v1",
+      "tile": 3,
+      "rect": [
+        1536,
+        0,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        338,
+        461,
+        148
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "splash": {
+      "atlas": "effects-v1",
+      "tile": 4,
+      "rect": [
+        0,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        73,
+        461,
+        413
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "coin": {
+      "atlas": "effects-v1",
+      "tile": 5,
+      "rect": [
+        512,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        29,
+        25,
+        455,
+        461
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "wind-parasol": {
+      "atlas": "effects-v1",
+      "tile": 6,
+      "rect": [
+        1024,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        26,
+        461,
+        460
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "rescue-glow": {
+      "atlas": "effects-v1",
+      "tile": 7,
+      "rect": [
+        1536,
+        512,
+        512,
+        512
+      ],
+      "bbox": [
+        26,
+        35,
+        461,
+        451
+      ],
+      "anchor": [
+        256,
+        486
+      ]
+    },
+    "golden-cicada": {
+      "atlas": "stratagem-icons-v1",
+      "tile": 0,
+      "rect": [
+        0,
+        0,
+        192,
+        192
+      ],
+      "bbox": [
+        10,
+        32,
+        173,
+        150
+      ],
+      "anchor": [
+        96,
+        182
+      ]
+    },
+    "scatter-wealth": {
+      "atlas": "stratagem-icons-v1",
+      "tile": 1,
+      "rect": [
+        192,
+        0,
+        192,
+        192
+      ],
+      "bbox": [
+        22,
+        9,
+        148,
+        173
+      ],
+      "anchor": [
+        96,
+        182
+      ]
+    },
+    "provoke": {
+      "atlas": "stratagem-icons-v1",
+      "tile": 2,
+      "rect": [
+        384,
+        0,
+        192,
+        192
+      ],
+      "bbox": [
+        23,
+        9,
+        147,
+        173
+      ],
+      "anchor": [
+        96,
+        182
+      ]
+    },
+    "rain": {
+      "atlas": "weather-v1",
+      "tile": 0,
+      "rect": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "bbox": [
+        13,
+        19,
+        230,
+        219
+      ],
+      "anchor": [
+        128,
+        128
+      ]
+    },
+    "night": {
+      "atlas": "weather-v1",
+      "tile": 1,
+      "rect": [
+        256,
+        0,
+        256,
+        256
+      ],
+      "bbox": [
+        13,
+        27,
+        230,
+        202
+      ],
+      "anchor": [
+        128,
+        128
+      ]
+    },
+    "wind": {
+      "atlas": "weather-v1",
+      "tile": 2,
+      "rect": [
+        0,
+        256,
+        256,
+        256
+      ],
+      "bbox": [
+        13,
+        35,
+        230,
+        186
+      ],
+      "anchor": [
+        128,
+        128
+      ]
+    },
+    "sun": {
+      "atlas": "weather-v1",
+      "tile": 3,
+      "rect": [
+        256,
+        256,
+        256,
+        256
+      ],
+      "bbox": [
+        13,
+        14,
+        230,
+        228
+      ],
+      "anchor": [
+        128,
+        128
+      ]
+    }
+  },
+  "doors": {
+    "left": {
+      "url": "assets/game/gate-door-left-v1.webp",
+      "png": "tools/art/v3/png/gate-door-left-v1.png",
+      "width": 256,
+      "height": 512,
+      "closedOffset": [
+        0,
+        0
+      ],
+      "bytes": 16112
+    },
+    "right": {
+      "url": "assets/game/gate-door-right-v1.webp",
+      "png": "tools/art/v3/png/gate-door-right-v1.png",
+      "width": 256,
+      "height": 512,
+      "closedOffset": [
+        256,
+        0
+      ],
+      "bytes": 16124
+    }
+  },
+  "doorFrame": {
+    "width": 512,
+    "height": 512,
+    "bbox": [
+      96,
+      25,
+      320,
+      461
+    ],
+    "anchor": [
+      256,
+      486
+    ],
+    "source": "docs/maps/changban-vertical-v6.webp",
+    "note": "Two equal half frames of one closed arch. Fit together to the map aperture at integration time."
+  }
+}

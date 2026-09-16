@@ -1,0 +1,255 @@
+{
+  "quality": 88,
+  "foot": 0.95,
+  "margin": 0.05,
+  "sheets": [
+    {
+      "id": "cao-troops-v3",
+      "cols": 4,
+      "rows": 2,
+      "cell": 512,
+      "names": [
+        "climber",
+        "cao-archer",
+        "fire-raider",
+        "shield-cart",
+        "strategist",
+        "water-raider",
+        "cavalry",
+        "escort-pair"
+      ],
+      "align": "feet",
+      "sourceOverrides": {
+        "6": {
+          "file": "sources/cavalry-escort-repair.png",
+          "rect": [
+            0,
+            0,
+            887,
+            887
+          ]
+        },
+        "7": {
+          "file": "sources/cavalry-escort-repair.png",
+          "rect": [
+            887,
+            0,
+            887,
+            887
+          ]
+        }
+      }
+    },
+    {
+      "id": "liubei-poses-v1",
+      "cols": 2,
+      "rows": 2,
+      "cell": 512,
+      "names": [
+        "liubei-struggle",
+        "liubei-hide",
+        "liubei-water-climb",
+        "liubei-captive"
+      ],
+      "align": "feet",
+      "sourceRects": [
+        [
+          0,
+          0,
+          722,
+          627
+        ],
+        [
+          735,
+          0,
+          519,
+          627
+        ],
+        [
+          0,
+          627,
+          694,
+          627
+        ],
+        [
+          700,
+          627,
+          554,
+          627
+        ]
+      ]
+    },
+    {
+      "id": "mechanism-states-v1",
+      "cols": 4,
+      "rows": 3,
+      "cell": 512,
+      "names": [
+        "well-splash",
+        "sluice-open",
+        "log-landed",
+        "log-broken",
+        "arrow-tower-fire",
+        "shrine-lot",
+        "shu-banner",
+        "winch-active",
+        "hanging-basket",
+        "prison-cart",
+        "planks-falling",
+        "boulder"
+      ],
+      "align": "feet",
+      "sourceRects": [
+        [
+          0,
+          0,
+          374,
+          351
+        ],
+        [
+          375,
+          0,
+          344,
+          351
+        ],
+        [
+          722,
+          0,
+          358,
+          345
+        ],
+        [
+          1080,
+          0,
+          368,
+          345
+        ],
+        [
+          0,
+          375,
+          395,
+          332
+        ],
+        [
+          395,
+          375,
+          375,
+          333
+        ],
+        [
+          775,
+          345,
+          300,
+          375
+        ],
+        [
+          1075,
+          370,
+          373,
+          340
+        ],
+        [
+          0,
+          710,
+          362,
+          376
+        ],
+        [
+          362,
+          731,
+          400,
+          355
+        ],
+        [
+          775,
+          731,
+          300,
+          355
+        ],
+        [
+          1080,
+          731,
+          368,
+          355
+        ]
+      ]
+    },
+    {
+      "id": "folk-v1",
+      "cols": 3,
+      "rows": 2,
+      "cell": 512,
+      "names": [
+        "refugee-elder",
+        "refugee-mother",
+        "refugee-youth",
+        "trapped-merchant",
+        "fisherman",
+        "boatman"
+      ],
+      "align": "feet"
+    },
+    {
+      "id": "effects-v1",
+      "cols": 4,
+      "rows": 2,
+      "cell": 512,
+      "names": [
+        "fire-wall-0",
+        "fire-wall-1",
+        "fire-wall-2",
+        "mud",
+        "splash",
+        "coin",
+        "wind-parasol",
+        "rescue-glow"
+      ],
+      "align": "feet",
+      "lockedGroups": [
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "stratagem-icons-v1",
+      "cols": 3,
+      "rows": 1,
+      "cell": 192,
+      "names": [
+        "golden-cicada",
+        "scatter-wealth",
+        "provoke"
+      ],
+      "align": "feet",
+      "exportIndividual": true
+    },
+    {
+      "id": "weather-v1",
+      "cols": 2,
+      "rows": 2,
+      "cell": 256,
+      "names": [
+        "rain",
+        "night",
+        "wind",
+        "sun"
+      ],
+      "align": "center",
+      "exportIndividual": true
+    },
+    {
+      "id": "gate-doors-v1",
+      "cols": 1,
+      "rows": 1,
+      "cell": 512,
+      "names": [
+        "closed-double-gate"
+      ],
+      "align": "feet",
+      "splitDoor": true
+    }
+  ]
+}

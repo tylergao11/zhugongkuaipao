@@ -30,7 +30,7 @@
   </div></div>
   <header class="hud">
     <h1>主公<span>快跑</span><small>刘备主题 · 长坂坡</small></h1>
-    <div class="progress-box"><div class="progress-label"><span id="escape-label">护送刘备抵达出口</span><span id="progress-text">0%</span></div><div class="track"><div id="progress-fill"></div><span class="goal-flag">⚑</span></div></div>
+    <div class="progress-box"><div class="progress-label"><span id="escape-label">护送刘备抵达出口</span><span id="progress-text">0%</span></div><div class="track"><div id="progress-fill"></div><span id="caocao-marker" class="caocao-marker" hidden title="曹操位置">曹</span><span class="goal-flag">⚑</span></div></div>
     <div class="hud-actions"><button id="haptics" class="square active" aria-label="关闭震感" title="震感">震</button><button id="sound" class="square active" aria-label="关闭音乐与音效" aria-pressed="true" title="音乐与音效">♫</button><button id="battle-speed" class="square" aria-label="当前正常速度，切换 2 倍速" aria-pressed="false" title="开启 2 倍速">1×</button></div>
   </header>
   <div class="battle-readout"><span id="kill-count">击退 0</span><span id="enemy-count">追兵 0</span></div>
@@ -46,7 +46,7 @@
   <button id="liu-indicator" hidden aria-label="主公在画面外，点击跟随主公" title="点击跟随主公"><span class="liu-pointer" aria-hidden="true"></span><span class="liu-pointer-label" aria-hidden="true">主公</span></button>
   <aside id="ferry-status" hidden aria-label="接应船靠岸进度"><span id="ferry-art" aria-hidden="true"></span><div><strong id="ferry-label"></strong><progress id="ferry-progress" max="1" value="0" aria-label="接应船靠岸进度"></progress></div></aside>
   <aside id="unit-menu" hidden aria-label="驻守单位操作">
-    <span id="unit-name"></span><button id="unit-turn" hidden>转向</button><button id="unit-fold" hidden>放倒拒马</button><button id="unit-swap" hidden>邻位换防</button><button id="dismantle">拆卸</button><button id="close-unit" aria-label="取消拆卸">×</button>
+    <span id="unit-name"></span><button id="unit-turn" hidden>转向</button><button id="unit-swap" hidden>邻位换防</button><button id="unit-upgrade" class="is-upgrade">升级</button><button id="dismantle">拆卸</button><button id="close-unit" aria-label="关闭菜单">×</button>
   </aside>
   <div id="drag-preview" hidden aria-hidden="true"><canvas id="drag-icon" width="256" height="256"></canvas></div>
   <div id="toast" role="status"></div>

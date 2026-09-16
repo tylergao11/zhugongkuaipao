@@ -66,7 +66,7 @@ export class CampProfile{
   this.data.chests++;this.data.pending={choices};this.save();return this.data.pending;
  }
  chooseLoot(id){if(!this.data.pending?.choices.includes(id)||this.data.owned.includes(id))return null;const item=lootById(id);if(!item)return null;this.data.owned.push(id);this.data.pending=null;this.save();return item;}
- awardCommander(game,enemyId,role){if(!game.runId||game.themeId!==this.themeId||game.level.tutorial||!game.level.phases.some(p=>p.roles.includes(role)))return 0;const amount=COMMANDERS[role]?.coins||0,key='kill:'+game.runId+':'+enemyId;if(!amount||this.data.claims.includes(key))return 0;this.data.coins+=amount;this.data.claims.push(key);this.data.claims=this.data.claims.slice(-100);this.save();return amount;}
+ awardCommander(game,enemyId,role){if(!game.runId||game.themeId!==this.themeId||game.level.tutorial||!(game.level.phases.some(p=>p.roles.includes(role))||game.caocao?.role===role))return 0;const amount=COMMANDERS[role]?.coins||0,key='kill:'+game.runId+':'+enemyId;if(!amount||this.data.claims.includes(key))return 0;this.data.coins+=amount;this.data.claims.push(key);this.data.claims=this.data.claims.slice(-100);this.save();return amount;}
  settle(game){
   if(!['won','lost'].includes(game.mode)||!game.runId||game.themeId!==this.themeId||this.data.claims.includes(game.runId))return null;
   const won=game.mode==='won',prior=this.data.cleared[game.level.id]||[false,false,false],first=won&&!prior[0],earned=won?[true,game.captures===0,!game.guardUsed]:[false,false,false];

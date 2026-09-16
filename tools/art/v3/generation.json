@@ -1,0 +1,75 @@
+{
+  "method": "native image_gen",
+  "reference": [
+    "assets/reference/zhugong-kuaipao-art-direction.png",
+    "assets/game/actors-v2.webp"
+  ],
+  "jobs": [
+    {
+      "id": "cao-troops-v3",
+      "cols": 4,
+      "rows": 2,
+      "cell": 512,
+      "names": [
+        "climber",
+        "cao-archer",
+        "fire-raider",
+        "shield-cart",
+        "strategist",
+        "water-raider",
+        "cavalry",
+        "escort-pair"
+      ],
+      "prompt": "Use case: stylized-concept. Production sprite atlas for the Chinese browser game 主公快跑. Attached images are STYLE/IDENTITY REFERENCES ONLY. Match actors-v2 exactly: bold uneven black ink outlines, expressive exaggerated adult guoman caricatures, big readable facial expressions, hand-painted cel-shaded volumes, dark weathered historical Three Kingdoms palette and warm fire highlights. Not realistic, not 3D, not glossy, not modern. SIDE VIEW for a side-on platform game. Every character faces RIGHT. Each object fully contained in its own equal square tile with generous flat-magenta gap. Flat solid EXACT #FF00FF background throughout, including all inter-object holes. NO gradient, no shadows on floor, no ground, no scenery, no grid lines, no labels, no numbers, no watermark. One pose per tile, not a walk cycle. No purple or magenta paint on the sprites. Keep fine outlines clean for chroma-key extraction. Use the precise specified row-major ordering. Feet / object bases should be horizontally aligned at 95% of their own tile height. Leave 5% side and top margins.\nOUTPUT: one 2048 x 1024 PNG sheet, EXACTLY 4 columns x 2 rows, eight isolated 512-square tiles. Uniform unit scale and right-facing orientation. Cao army shared palette: charcoal cloth, black iron, muted dark red plume/sash.\nTop row left to right:\n1 skinny lightly armored climbing soldier with a bamboo ladder on his back and a hooked rope at waist, hands and feet spread in a climbing pose, no shield.\n2 Cao archer in a leather cap, drawing a bow and aiming an arrow RIGHT; quiver at hip; charcoal and dark red clothing, NOT green allied archer.\n3 sneering fire-attack soldier, one hand carrying a blazing torch and the other gripping an oil jar, face lit orange.\n4 one Cao soldier BEHIND/LEFT of a single-wheeled siege handcart, pushing it RIGHT; a large wood shield panel fixed at the front/right. Complete human and cart together fully inside one tile.\nBottom row left to right:\n5 sinister Cao strategist, traditional dark scholar robe and tall crown, flicking a feather fan toward RIGHT.\n6 wet infiltrator just climbing ashore in half-crouch, dripping hair, short knife held horizontally between teeth, trailing waterweed on shoulders, no actual shore.\n7 one ordinary Cao cavalryman on a BLACK horse, both rider and full horse facing RIGHT, rider leaning forward with long spear for a charge, not a named heroic general. Entire spear fits tile.\n8 two Cao soldiers facing RIGHT in tandem, carrying a single horizontal shoulder-height transport pole between them. The CENTRAL SPAN of the pole is EMPTY, with room below it for a captive to be added by code. Both soldiers and pole all inside this one tile. Do NOT draw Liu Bei or any prisoner or load."
+    },
+    {
+      "id": "liubei-poses-v1",
+      "cols": 2,
+      "rows": 2,
+      "cell": 512,
+      "names": [
+        "liubei-struggle",
+        "liubei-hide",
+        "liubei-water-climb",
+        "liubei-captive"
+      ],
+      "prompt": "Use case: stylized-concept. Production sprite atlas for the Chinese browser game 主公快跑. Attached images are STYLE/IDENTITY REFERENCES ONLY. Match actors-v2 exactly: bold uneven black ink outlines, expressive exaggerated adult guoman caricatures, big readable facial expressions, hand-painted cel-shaded volumes, dark weathered historical Three Kingdoms palette and warm fire highlights. Not realistic, not 3D, not glossy, not modern. SIDE VIEW for a side-on platform game. Every character faces RIGHT. Each object fully contained in its own equal square tile with generous flat-magenta gap. Flat solid EXACT #FF00FF background throughout, including all inter-object holes. NO gradient, no shadows on floor, no ground, no scenery, no grid lines, no labels, no numbers, no watermark. One pose per tile, not a walk cycle. No purple or magenta paint on the sprites. Keep fine outlines clean for chroma-key extraction. Use the precise specified row-major ordering. Feet / object bases should be horizontally aligned at 95% of their own tile height. Leave 5% side and top margins.\nOUTPUT: one 1024 x 1024 PNG sheet, EXACTLY 2 columns x 2 rows, four isolated 512-square tiles.\nAll four are the SAME Liu Bei as TOP-LEFT character in attached actors sheet: pale yellow-green outer robe, green skirt/trousers, dark hair topknot tied gold, thick brows, small thin mustache and pointed beard, terrified comic crying face, big eyes, sweat droplets. Identity, outfit and cartoon proportions locked. Faces toward RIGHT.\nTop-left: carried struggle pose. Liu Bei's body lies HORIZONTALLY with head to the RIGHT, legs to the LEFT, knees kicking and arms flailing, mouth shouting. Draw ONLY Liu Bei, no carrier, no pole or furniture.\nTop-right: hiding pose. Liu Bei peeks his frightened face and upper torso around the edge of a rough hut doorframe, looking RIGHT, half hidden. Only upper body plus a narrow wooden frame edge; no full hut.\nBottom-left: soaking wet Liu Bei hauling himself back up, both hands gripping a VERY SMALL bridge-edge lip on his RIGHT, body sprawled/crawling, droplets falling. Only Liu Bei and the minimum edge fragment necessary to read the pose, no scene or broad bridge.\nBottom-right: Liu Bei crouching as if inside a prison cart, distressed, elbows forward and two fists raised gripping imaginary vertical bars. DRAW ONLY THE MAN, NO actual bars, cage, cart, wheels or background: the separate prison-cart sprite is composited by code."
+    },
+    {
+      "id": "mechanism-states-v1",
+      "cols": 4,
+      "rows": 3,
+      "cell": 512,
+      "names": [
+        "well-splash",
+        "sluice-open",
+        "log-landed",
+        "log-broken",
+        "arrow-tower-fire",
+        "shrine-lot",
+        "shu-banner",
+        "winch-active",
+        "hanging-basket",
+        "prison-cart",
+        "planks-falling",
+        "boulder"
+      ],
+      "prompt": "Use case: stylized-concept. Production sprite atlas for the Chinese browser game 主公快跑. Attached images are STYLE/IDENTITY REFERENCES ONLY. Match actors-v2 exactly: bold uneven black ink outlines, expressive exaggerated adult guoman caricatures, big readable facial expressions, hand-painted cel-shaded volumes, dark weathered historical Three Kingdoms palette and warm fire highlights. Not realistic, not 3D, not glossy, not modern. SIDE VIEW for a side-on platform game. Every character faces RIGHT. Each object fully contained in its own equal square tile with generous flat-magenta gap. Flat solid EXACT #FF00FF background throughout, including all inter-object holes. NO gradient, no shadows on floor, no ground, no scenery, no grid lines, no labels, no numbers, no watermark. One pose per tile, not a walk cycle. No purple or magenta paint on the sprites. Keep fine outlines clean for chroma-key extraction. Use the precise specified row-major ordering. Feet / object bases should be horizontally aligned at 95% of their own tile height. Leave 5% side and top margins.\nOUTPUT: one 2048 x 1536 PNG atlas, EXACTLY 4 columns x 3 rows, twelve isolated square tiles. These are mechanism STATE OVERLAYS in a side-view game. Chunky readable hand-painted stone, wood and iron matching reference. Each self-contained.\nRow 1, left to right:\n1 tilted wooden bucket with one continuous arc of water splashing out toward RIGHT; bucket plus water only, no well or ground.\n2 small ancient timber sluice frame, gate board visibly RAISED, water rushing out through open slot; no river landscape.\n3 one thick horizontal timber log lying on its side, bound by TWO iron bands, intact.\n4 the EXACT same iron-banded log split in TWO broken halves, snapped ends visible, no extra logs.\nRow 2:\n5 ONLY upper roof/deck fragment of a wood arrow tower, THREE small Cao-style archers simultaneously shooting three arrows RIGHT; no full tower or ground.\n6 small old wood shrine with one blank divination stick floating out, red silk ribbon tied to the stick, NO writing.\n7 one upright ragged ochre Shu war banner with dark red trim on a pole; flag shows the one large Chinese character \"蜀\", accurately legible. THIS is the only allowed text anywhere on the sheet.\n8 heavy wooden iron-chain winch, spool turned with taut iron chain running horizontally right, no motion text.\nRow 3:\n9 EMPTY large bamboo lifting basket hanging from an iron hook and a short rope above; open mouth visible, no human.\n10 EMPTY ancient wooden barred prison cart with wheels, side view. No captive. Widely spaced front vertical bars, dark wood frame, visible EMPTY MAGENTA spaces between bars so a separately drawn character can be composited inside.\n11 several rotten bridge planks cracked and falling downward, splinters around, no whole bridge.\n12 one huge irregular gray boulder with deep cracks and warm highlighted edges, a hand-drawn replacement for a rockfall icon."
+    },
+    {
+      "id": "folk-v1",
+      "cols": 3,
+      "rows": 2,
+      "cell": 512,
+      "names": [
+        "refugee-elder",
+        "refugee-mother",
+        "refugee-youth",
+        "trapped-merchant",
+        "fisherman",
+        "boatman"
+      ],
+      "prompt": "Use case: stylized-concept. Production sprite atlas for the Chinese browser game 主公快跑. Attached images are STYLE/IDENTITY REFERENCES ONLY. Match actors-v2 exactly: bold uneven black ink outlines, expressive exaggerated adult guoman caricatures, big readable facial expressions, hand-painted cel-shaded volumes, dark weathered historical Three Kingdoms palette and warm fire highlights. Not realistic, not 3D, not glossy, not modern. SIDE VIEW for a side-on platform game. Every character faces RIGHT. Each object fully contained in its own equal square tile with generous flat-magenta gap. Flat solid EXACT #FF00FF background throughout, including all inter-object holes. NO gradient, no shadows on floor, no ground, no scenery, no grid lines, no labels, no numbers, no watermark. One pose per tile, not a walk cycle. No purple or magenta paint on the sprites. Keep fine outlines clean for chroma-key extraction. Use the precise specified row-major ordering. Feet / object bases should be horizontally aligned at 95% of their own tile height. Leave 5% side and top margins.\nOUTPUT: one 1536 x 1024 PNG atlas, EXACTLY 3 columns x 2 rows, six isolated square tiles.\nOrdinary historical Chinese civilians, NO armor. Gray, ochre and brown cloth; comic frightened or earnest faces. All moving/posed toward RIGHT. Single illustrated pose per person.\nTop-left: elderly refugee hobbling RIGHT with walking stick, a tied cloth bundle on back, worried head turning back slightly.\nTop-middle: refugee woman with wrapped headscarf, cradling swaddled infant safely while jogging RIGHT.\nTop-right: alarmed teenage refugee boy running RIGHT clutching a disgruntled white GOOSE under his arm, comic panic.\nBottom-left: fat wealthy stranded merchant wearing worn silk clothes, seated on the ground with legs to right, money chest supported on lap, BOTH hands raised calling for rescue, open mouth. No text.\nBottom-middle: barefoot fisherman, broad conical straw hat and straw rain cape, standing facing right with a long bamboo punting pole, full pole fitting in tile.\nBottom-right: muscular boatman, bare chest and cloth headwrap, braced legs leaning back pulling a taut mooring rope, facing right. Rope fits in tile, no boat or ground."
+    }
+  ]
+}

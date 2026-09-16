@@ -7,7 +7,8 @@ export const ART_ATLASES={
   siege:{url:'assets/game/siege-props-v1.svg',cols:2,rows:1},
   defense:{url:'assets/game/liubei-crouch-v1.webp',cols:1,rows:1},
   tactics:{url:'assets/game/tactic-props-v1.svg',cols:3,rows:1},
-  dilu:{url:'assets/game/dilu-v1.webp',cols:3,rows:2}
+  dilu:{url:'assets/game/dilu-v1.webp',cols:3,rows:2},
+  caocao:{url:'assets/game/caocao-v1.webp',cols:1,rows:1}
 };
 export const ART_SPRITES=Object.fromEntries(lootOrder.map((id,tile)=>[id,{atlas:'loot',tile}]));
 Object.assign(ART_SPRITES,{
@@ -16,7 +17,8 @@ Object.assign(ART_SPRITES,{
   'fire-barrel':{atlas:'siege',tile:0},'war-gong':{atlas:'siege',tile:1},
   'liubei-crouch':{atlas:'defense',tile:0},
   'lure-prop':{atlas:'tactics',tile:0},'smoke-prop':{atlas:'tactics',tile:1},'redeploy-prop':{atlas:'tactics',tile:2},
-  'dilu-wait':{atlas:'dilu',tile:0},'dilu-mounted':{atlas:'dilu',tile:1}
+  'dilu-wait':{atlas:'dilu',tile:0},'dilu-mounted':{atlas:'dilu',tile:1},
+  caocao:{atlas:'caocao',tile:0}
 });
 export const MOUNT_ART={size:240,footAnchor:470/512,stride:100,frames:['dilu-run-0','dilu-run-1','dilu-run-2','dilu-run-3']};
 for(const [i,id]of MOUNT_ART.frames.entries())ART_SPRITES[id]={atlas:'dilu',tile:i+2};
@@ -32,5 +34,5 @@ export function drawArt(ctx,images,id,x,y,width,height=width){
   ctx.drawImage(img,sprite.tile%atlas.cols*sw,Math.floor(sprite.tile/atlas.cols)*sh,sw,sh,x,y,width,height);return true;
 }
 export function battleArtKeys(level,deck){
-  return [...new Set([...(level.mount?[level.mount.id]:[]),...(level.intro?[level.intro.id]:[]),...(level.mechanisms||[]).map(m=>ART_SPRITES[m.id]?.atlas).filter(Boolean),...(level.gate||level.escape?['river']:[]),...(level.escape?['defense']:[]),...(level.ambush||deck.some(id=>['redeploy','lure','smoke'].includes(id))?['tactics']:[])])];
+  return [...new Set([...(level.mount?[level.mount.id]:[]),...(level.intro?[level.intro.id]:[]),...(level.mechanisms||[]).map(m=>ART_SPRITES[m.id]?.atlas).filter(Boolean),...(level.gate||level.escape?['river']:[]),...(level.escape?['defense']:[]),...(deck.includes('smoke')?['tactics']:[]),...(level.caocao?['caocao']:[])])];
 }

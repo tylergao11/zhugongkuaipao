@@ -1,0 +1,15 @@
+{
+  "quality": 90,
+  "foot": 0.95,
+  "margin": 0.05,
+  "sheets": [
+    {
+      "id": "caocao-v1",
+      "cols": 1,
+      "rows": 1,
+      "cell": 512,
+      "names": ["caocao"],
+      "align": "feet"
+    }
+  ]
+}

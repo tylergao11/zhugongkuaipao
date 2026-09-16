@@ -1,0 +1,69 @@
+{
+  "method": "native image_gen",
+  "jobs": [
+    {
+      "id": "effects-v1",
+      "cols": 4,
+      "rows": 2,
+      "cell": 512,
+      "names": [
+        "fire-wall-0",
+        "fire-wall-1",
+        "fire-wall-2",
+        "mud",
+        "splash",
+        "coin",
+        "wind-parasol",
+        "rescue-glow"
+      ],
+      "refs": [
+        "D:/zhugongkuaipao/assets/reference/zhugong-kuaipao-art-direction.png"
+      ],
+      "prompt": "Use case: stylized-concept. Production sprite atlas for the Chinese browser game 主公快跑. Attached images are STYLE/IDENTITY REFERENCES ONLY. Match actors-v2 exactly: bold uneven black ink outlines, expressive exaggerated adult guoman caricatures, big readable facial expressions, hand-painted cel-shaded volumes, dark weathered historical Three Kingdoms palette and warm fire highlights. Not realistic, not 3D, not glossy, not modern. SIDE VIEW for a side-on platform game. Every character faces RIGHT. Each object fully contained in its own equal square tile with generous flat-magenta gap. Flat solid EXACT #FF00FF background throughout, including all inter-object holes. NO gradient, no shadows on floor, no ground, no scenery, no grid lines, no labels, no numbers, no watermark. One pose per tile, not a walk cycle. No purple or magenta paint on the sprites. Keep fine outlines clean for chroma-key extraction. Use the precise specified row-major ordering. Feet / object bases should be horizontally aligned at 95% of their own tile height. Leave 5% side and top margins.\nOUTPUT one 2048 x 1024 PNG atlas, EXACTLY 4 columns x 2 rows of eight equal square tiles. Hand-illustrated effect stickers for the same game. No characters. All effects sit against uniform pure #FF00FF.\nTop row:\n1 fire wall phase A: horizontal waist-high row of orange/yellow flame tongues, igniting strongly on left, weak on right.\n2 fire wall phase B: same flame wall same overall footprint/base line/height as tile 1, flare spreading left to right through center.\n3 fire wall phase C: same flame wall same footprint/base line/height, strong flare on right. The three phases must occupy the same position and scale in their tiles; flame bases on same y=95% and total flame width 90% tile, height about 45% tile. No logs, ground, torch or opaque smoke clouds.\n4 flat elliptical dark brown mud patch with puddles and footprints, slightly elevated side-view game ground decal, not a bowl.\nBottom row:\n5 expressive blue-white splash with a rising water column and droplets, isolated.\n6 ONE round gold/brass Chinese coin with square hole, facing camera, modest crisp gleam, NO letters. The square hole shows flat magenta.\n7 ONE traditional pale paper parasol tilted diagonally by gust, bamboo ribs and handle, no arrow icon, no person, no writing.\n8 ONE full circular rescue-success burst/ring of golden rays, a bright golden ring with short outward rays, empty magenta center. Avoid solid white square backdrop. Crisp hand-painted ray shapes, no broad translucent magenta-contaminated haze."
+    },
+    {
+      "id": "stratagem-icons-v1",
+      "cols": 3,
+      "rows": 1,
+      "cell": 192,
+      "names": [
+        "golden-cicada",
+        "scatter-wealth",
+        "provoke"
+      ],
+      "refs": [
+        "D:/zhugongkuaipao/assets/game/loot-icons-v1.webp"
+      ],
+      "prompt": "Use case: stylized-concept. Production sprite atlas for the Chinese browser game 主公快跑. Attached images are STYLE/IDENTITY REFERENCES ONLY. Match actors-v2 exactly: bold uneven black ink outlines, expressive exaggerated adult guoman caricatures, big readable facial expressions, hand-painted cel-shaded volumes, dark weathered historical Three Kingdoms palette and warm fire highlights. Not realistic, not 3D, not glossy, not modern. SIDE VIEW for a side-on platform game. Every character faces RIGHT. Each object fully contained in its own equal square tile with generous flat-magenta gap. Flat solid EXACT #FF00FF background throughout, including all inter-object holes. NO gradient, no shadows on floor, no ground, no scenery, no grid lines, no labels, no numbers, no watermark. One pose per tile, not a walk cycle. No purple or magenta paint on the sprites. Keep fine outlines clean for chroma-key extraction. Use the precise specified row-major ordering. Feet / object bases should be horizontally aligned at 95% of their own tile height. Leave 5% side and top margins.\nOUTPUT one 1536 x 512 PNG strip, EXACTLY THREE equal square tiles side by side. Final icons will be packed at 192x192 each. Use the attached loot sheet only as a painted MATERIAL/ICON STYLE reference. Do not copy its beige background; required background is PURE #FF00FF. NO text anywhere.\nLeft: 金蝉脱壳, a single hollow golden CICADA EXUVIA/shed shell, empty split along its back, six small legs and clear cicada shape, warm metallic ochre highlights, readable as hollow not a living insect.\nMiddle: 散财令, an ancient wood command tablet/令牌 tilted slightly, several gold round square-hole coins spilling across its front, no lettering.\nRight: 激将令, an ancient RED command tablet with a bold stylized flame on its front and modest real orange flames licking the top, dark wooden rim, no lettering.\nOne composed object per tile. Same scale and margins. Fully isolated on flat magenta, no card borders, no UI frames."
+    },
+    {
+      "id": "weather-v1",
+      "cols": 2,
+      "rows": 2,
+      "cell": 256,
+      "names": [
+        "rain",
+        "night",
+        "wind",
+        "sun"
+      ],
+      "refs": [
+        "D:/zhugongkuaipao/assets/reference/zhugong-kuaipao-art-direction.png"
+      ],
+      "prompt": "Use case: stylized-concept. Production sprite atlas for the Chinese browser game 主公快跑. Attached images are STYLE/IDENTITY REFERENCES ONLY. Match actors-v2 exactly: bold uneven black ink outlines, expressive exaggerated adult guoman caricatures, big readable facial expressions, hand-painted cel-shaded volumes, dark weathered historical Three Kingdoms palette and warm fire highlights. Not realistic, not 3D, not glossy, not modern. SIDE VIEW for a side-on platform game. Every character faces RIGHT. Each object fully contained in its own equal square tile with generous flat-magenta gap. Flat solid EXACT #FF00FF background throughout, including all inter-object holes. NO gradient, no shadows on floor, no ground, no scenery, no grid lines, no labels, no numbers, no watermark. One pose per tile, not a walk cycle. No purple or magenta paint on the sprites. Keep fine outlines clean for chroma-key extraction. Use the precise specified row-major ordering. Feet / object bases should be horizontally aligned at 95% of their own tile height. Leave 5% side and top margins.\nOUTPUT one 1024 x 1024 PNG sheet, EXACTLY 2 columns x 2 rows. Four clear simple ink-line weather symbols for a small in-game header, each final icon will be 256 x 256. More simplified than character sprites: bold hand-ink outlines, restrained hand-painted fills, instantly readable at 24 pixels. No scenery or people, no letters. Align symbols centered within their cells.\nTop-left RAIN: one blue-gray cloud with five diagonal slanted rain strokes.\nTop-right NIGHT: one pale gold crescent moon and three tiny star marks.\nBottom-left WIND: exactly three curling dark teal wind strokes carrying one olive leaf.\nBottom-right SUN: one warm golden sun disk with short ink-outlined rays.\nAll on absolutely uniform flat #FF00FF background, no card tile backgrounds."
+    },
+    {
+      "id": "gate-doors-v1",
+      "cols": 1,
+      "rows": 1,
+      "cell": 512,
+      "names": [
+        "closed-double-gate"
+      ],
+      "refs": [
+        "D:/zhugongkuaipao/output/art-v3/gate-reference.png"
+      ],
+      "prompt": "Use case: precise-object-edit / matching game prop creation.\nAttached image is the exact OPEN doorway in an approved guoman side-view map, for silhouette and material reference. Create an isolated CLOSED TWO-LEAF WOODEN DOOR overlay to fit that same tall round-topped arch. Output one 1024 x 1024 PNG on flat pure #FF00FF background.\nDraw ONLY the two dark brown wooden door leaves, closed tightly together along a straight vertical center seam, front-facing, no perspective rotation. Together their outer silhouette is a tall round-headed arch, width to height approximately 0.63:1. Each leaf has half of the curved arch on top, flat straight bottom; the central edges perfectly vertical and of equal height. Heavy dark wood vertical planks, simple iron horizontal straps, a few iron studs, one iron ring handle per leaf at matching height near the seam. Iron hinges on outside edges. Warm amber reflected light on sides, thick ink outlines, hand-painted cel-shaded weathered game style exactly as reference. No fancy imperial gold ornament.\nThere is NO masonry arch, NO frame, NO wall, NO tunnel, NO ground, NO scenery, NO people. The entire space outside the door silhouette is uniform pure #FF00FF, including corners above its curved top. The two leaves must touch at the central seam; we will split the image there into left and right PNG sprites, so keep symmetry and center seam dead-center. Whole closed gate centered and fully visible with equal magenta margin around it, bottom at 95% of image height, top at 6%. No text, numbers, cast shadow, glow or labels."
+    }
+  ]
+}

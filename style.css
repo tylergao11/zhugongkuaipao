@@ -96,7 +96,7 @@ h1 span{color:#f26442}h1 small{display:block;text-align:center;margin-top:.5cqw;
 .icon-zhangfei{background-position:66.666% 0}.icon-guanyu{background-position:33.333% 0}.icon-zhugeliang{background-position:100% 0}.icon-archer{background-position:0 100%}
 .icon-ballista,.icon-catapult,.icon-snare{background-image:url('assets/game/shu-devices-v3.webp');background-size:300% 100%}.icon-ballista{background-position:0 0}.icon-catapult{background-position:50% 0}.icon-snare{background-position:100% 0}
 .icon-barricade,.icon-log,.icon-oil{background-image:url('assets/game/props.webp');background-size:300% 100%}.icon-barricade{background-position:0 0}.icon-log{background-position:50% 0}.icon-oil{background-position:100% 0}
-.icon-lancer,.icon-shieldbearer,.icon-crossbowman,.icon-slinger{background-image:url('assets/game/shu-infantry-v1.webp');background-size:200% 200%}.icon-lancer{background-position:0 0}.icon-shieldbearer{background-position:100% 0}.icon-crossbowman{background-position:0 100%}.icon-slinger{background-position:100% 100%}
+.icon-lancer,.icon-shieldbearer{background-image:url('assets/game/shu-infantry-v1.webp');background-size:200% 200%}.icon-lancer{background-position:0 0}.icon-shieldbearer{background-position:100% 0}
 @media(prefers-reduced-motion:reduce){.card,.track>div,.skill-meter i{transition:none}#gate-danger.carrying{animation:none;opacity:.7}}
 
 #mechanism-tools{position:absolute;left:12px;top:calc(var(--hud-height) + 34px);display:flex;gap:8px;z-index:5}

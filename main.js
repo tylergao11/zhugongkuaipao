@@ -8,6 +8,8 @@ import {createCamp} from './camp.js';
 import {COMMANDER_RIGS} from './commander-rigs.js';
 import {createBattlePopup,BATTLE_POPUP_ASSETS} from './assets/game/battle-popup.js';
 import {ART_ATLASES,MOUNT_ART,artIcon,drawArt,battleArtKeys} from './assets/game/game-art.js';
+import {BATTLE} from './assets/game/balance.js';
+import {UNIT_PERKS} from './content.js';
 
 const $ = id => document.getElementById(id);
 const typeStyle=getComputedStyle(document.documentElement);
@@ -17,8 +19,8 @@ function canvasFont(size,display=false){const step=worldTextSizes.reduce((best,n
 const profile=new CampProfile();
 const game = new Game(profile.snapshot()), stage = $('game'), canvas = $('scene'), ctx = canvas.getContext('2d', { alpha: false });
 const sprites = { liubei: 0, guanyu: 1, zhangfei: 2, zhugeliang: 3, archer: 4, enemy: 5, enemyHeavy: 6, horse: 7 };
-const actorSizes = { liubei: 155, guanyu: 222, zhangfei: 220, zhugeliang: 174, archer: 151, lancer:184,shieldbearer:160,crossbowman:163,slinger:155,enemy: 144, enemyHeavy: 158,caohong:190,xiahou:200 };
-const troopSprites={lancer:0,shieldbearer:1,crossbowman:2,slinger:3};
+const actorSizes = { liubei: 155, guanyu: 222, zhangfei: 220, zhugeliang: 174, archer: 151, lancer:184,shieldbearer:160,enemy: 144, enemyHeavy: 158,caohong:190,xiahou:200,caocao:215 };
+const troopSprites={lancer:0,shieldbearer:1};
 const images = {};
 const battleArt={};
 let rigs = {};
@@ -212,21 +214,34 @@ function closeUnitMenu() { inspectedSlot=null; $('unit-menu').hidden=true; }
 function inspectUnit(id) {
   const unit=game.units.find(u=>u.slot===id);
   if(!unit){closeUnitMenu();return;}
-  inspectedSlot=id;game.tacticSource=id;const slot=SLOTS[id],def=TYPES[unit.type];
-  $('unit-turn').hidden=!(unit.type==='ballista'||unit.type==='shieldbearer'||unit.variant==='line-lance');
-  $('unit-fold').hidden=unit.variant!=='fold';$('unit-fold').disabled=unit.folds>=2;$('unit-fold').textContent=unit.folded?'重新升起':'放倒拒马';
-  $('unit-swap').hidden=unit.type!=='shieldbearer'||!!unit.variant;$('unit-swap').disabled=unit.swapCooldown>0;
-  $('dismantle').disabled=unit.destination!==undefined||def.tactic;
-  $('unit-name').textContent=def.name;
-  $('dismantle').textContent=`拆卸 · 退 ${Math.floor(def.cost*.5*Math.max(0,Math.min(1,unit.hp/unit.maxHp)))}`;
+  inspectedSlot=id;const slot=SLOTS[id],def=TYPES[unit.type];
+  $('unit-turn').hidden=!(unit.type==='ballista'||unit.type==='shieldbearer');
+  $('unit-swap').hidden=unit.type!=='shieldbearer';$('unit-swap').disabled=unit.swapCooldown>0;
+  $('dismantle').disabled=!!def.tactic;
+  // In-battle upgrade: price, next level and the perk that level 2 unlocks.
+  const upgradable=!def.trap&&!def.tactic,cost=game.upgradeCost(unit),maxed=upgradable&&!game.canUpgrade(unit),perk=UNIT_PERKS[unit.type];
+  $('unit-upgrade').hidden=!upgradable;
+  $('unit-upgrade').disabled=maxed||!cost||game.gold<cost;
+  $('unit-upgrade').textContent=maxed?'已满级':`升级 · ${cost}`;
+  const perkNote=perk&&unit.level+1===BATTLE.upgrade.perkLevel?` · 解锁「${perk.name}」${perk.text}`:'';
+  $('unit-upgrade').title=maxed?'已满级':game.gold<cost?'军饷不足':`升至 ${unit.level+1} 级 · 生命与伤害 +30%${perkNote}`;
+  const perkTag=perk&&game.perk(unit)?` · ${perk.name}`:'';
+  $('unit-name').textContent=def.name+(unit.level>1?` · ${unit.level}级`:'')+perkTag;
+  $('dismantle').textContent=`拆卸 · 退 ${game.refundOf(unit)}`;
   const o=camera.offset;
   $('unit-menu').style.left=`${Math.max(120,Math.min(stage.clientWidth-120,o.x+slot.x*camera.scale))}px`;
   $('unit-menu').style.top=`${Math.max(battle.offsetTop+40,Math.min(stage.clientHeight-130,battle.offsetTop+o.y+(slot.y-172)*camera.scale))}px`;
   $('unit-menu').hidden=false;
 }
 $('dismantle').addEventListener('click',()=>{if(inspectedSlot!==null){game.dismantle(inspectedSlot);closeUnitMenu();processEvents();updateUI();}});
+$('unit-upgrade').addEventListener('click',()=>{
+  if(inspectedSlot===null)return;
+  const slot=inspectedSlot;
+  if(!game.upgrade(slot)){toast(game.gold<game.upgradeCost(game.units.find(u=>u.slot===slot))?'军饷不足':'无法升级');return;}
+  sound('place');processEvents();inspectUnit(slot);updateUI();
+});
 $('close-unit').addEventListener('click',()=>{swapSource=null;closeUnitMenu();});
-for(const action of ['turn','fold'])$('unit-'+action).addEventListener('click',()=>{if(inspectedSlot!==null)game.unitAction(inspectedSlot,action);closeUnitMenu();updateUI();});
+$('unit-turn').addEventListener('click',()=>{if(inspectedSlot!==null)game.unitAction(inspectedSlot,'turn');closeUnitMenu();updateUI();});
 $('unit-swap').addEventListener('click',()=>{swapSource=inspectedSlot;closeUnitMenu();toast('点击同层相邻的普通兵交换位置');});
 $('mechanism-tools').addEventListener('click',e=>{const id=e.target.closest('button')?.dataset.mechanism;if(id)activateMapMechanism(id,true);});
 
@@ -294,7 +309,8 @@ function updateUI() {
   if(inspectedSlot!==null && (!game.units.some(u=>u.slot===inspectedSlot)||game.mode!=='running'))closeUnitMenu();
   $('gold').textContent=Math.floor(game.gold);
   document.querySelector('.hud h1 small').textContent=(game.level.boss?'BOSS · ':'')+game.level.name+(game.level.tutorial?' · 教学关':'');
-  const bossBattle=!!game.level.boss&&['running','paused'].includes(game.mode),boss=game.enemies.find(e=>e.boss&&e.hp>0&&!e.escaped);
+  // Cao Cao owns the boss bar once he is on the map; before that the first living commander does.
+  const bossBattle=!!game.level.boss&&['running','paused'].includes(game.mode),boss=(game.caocao&&game.caocao.hp>0&&!game.caocao.escaped?game.caocao:null)||game.enemies.find(e=>e.boss&&e.hp>0&&!e.escaped);
   stage.classList.toggle('boss-level',!!game.level.boss);stage.classList.toggle('boss-running',bossBattle&&game.mode==='running');stage.classList.toggle('has-mechanisms',game.mechanisms.length>0);
   $('boss-pressure').hidden=!bossBattle;$('boss-status').hidden=!bossBattle||!boss;
   const defending=game.defending&&['running','paused'].includes(game.mode);
@@ -320,6 +336,8 @@ function updateUI() {
   $('progress-text').textContent=`${pct}%`;
   $('progress-fill').style.width=`${pct}%`;
   $('progress-fill').parentElement.classList.toggle('captured',!!game.liu.carrier);
+  const marker=$('caocao-marker'),cc=game.caocao;
+  {const show=!!cc&&cc.hp>0&&!cc.escaped&&['running','paused'].includes(game.mode);marker.hidden=!show;if(show)marker.style.left=`${Math.min(100,Math.max(0,cc.s/ROUTE_LENGTH*100))}%`;}
   const rightGateThreat=game.caozhangGateOpen;
   $('escape-label').textContent=game.liu.carrier ? rightGateThreat?'正被押往登岸口':'主公被押送' : game.liu.mounted?'刘备 · 的卢疾驰':game.liu.dash>0?'刘备 · 脚底抹油！':gateActive?'刘备逃脱 · 登岸口已开':'刘备逃脱进度';
   if(game.defending&&!game.liu.carrier)$('escape-label').textContent='进入防守 · 守住码头';
@@ -357,9 +375,8 @@ function updateUI() {
   }
   const def=TYPES[game.selected];
   for (let id=0;id<SLOTS.length;id++) {
-    const occupied=game.units.some(u=>u.hp>0&&(u.slot===id||u.destination===id));
+    const occupied=game.units.some(u=>u.hp>0&&u.slot===id);
     slots[id].classList.toggle('occupied',occupied);
-    slots[id].title=game.ambushReserved(id)?'伏兵驻守位':'';
     slots[id].classList.toggle('available',!!def&&!def.instant&&game.canPlace(game.selected,id));
     slots[id].classList.toggle('target',!!def?.instant&&game.canPlace(game.selected,id));
     slots[id].disabled=game.mode!=='running';
@@ -556,7 +573,8 @@ function processEvents() {
     }
     if(e.type==='guard-land'){impact(true);sound('rescue');}
     if(e.type==='mechanism'){impact(true);sound(e.mechanismId==='war-gong'?'gong':'rescue');}
-    if(e.type==='ambush'){$('skill-banner').textContent=e.text;$('skill-banner').style.setProperty('--skill-color','#eacb7c');skillBannerUntil=game.time+2;impact(true);sound('rescue');}
+    if(e.type==='caocao'){$('skill-banner').textContent='曹操亲至 · 全军加速 · 被他碰到直接判负';$('skill-banner').style.setProperty('--skill-color','#d8362a');skillBannerUntil=game.time+3.2;game.shake=.5;impact(true);sound('capture');sound('war-drum');continue;}
+    if(e.type==='upgrade'){sound('place');}
     if(e.type==='mount'){sound('rescue');updateUI();}
     if (['place','attack','capture','rescue'].includes(e.type)) sound(e.type);
     if (e.type==='won'||e.type==='lost') updateUI();
@@ -586,6 +604,17 @@ function paintedSign(label,x,y,width,height,size=18,ink='#382717',material='ivor
 }
 
 function actor(c,type,x,y,size,dir=1,state='idle',phase=0,flash=0,alpha=1) {
+  if(type==='caocao'){
+    // Single-pose cutout facing right; walking is a paper bob, hits flash like everyone else.
+    const run=state==='run',dying=state==='death';
+    c.save();c.globalAlpha=alpha;c.translate(x,y);c.scale(dir,1);
+    if(dying)c.rotate(-phase*1.5);
+    else if(run&&!reducedMotion){c.translate(0,-Math.abs(Math.sin(phase*.09))*5);c.rotate(Math.sin(phase*.09)*.05);}
+    else if(state==='attack'){const strike=Math.sin(Math.min(1,Math.max(0,phase))*Math.PI);c.translate(strike*10,0);c.rotate(-strike*.1);}
+    if(flash>0)c.filter='brightness(1.45)';
+    drawArt(c,battleArt,'caocao',-size/2,-size*.95,size);
+    c.restore();return;
+  }
   const boss=type==='caohong'||type==='xiahou';
   const infantry=troopSprites[type]!==undefined;
   let sheet=infantry?images.troops:boss?images.commanders:images.actors; const index=infantry?troopSprites[type]:boss?(type==='caohong'?0:1):sprites[type];
@@ -605,9 +634,8 @@ function actor(c,type,x,y,size,dir=1,state='idle',phase=0,flash=0,alpha=1) {
     c.rotate(sway*(type==='zhugeliang'?.018:.012));
     if(attack){
       const snap=attackProgress<.3?-attackProgress/.3:Math.exp(-(attackProgress-.3)*7);
-      if(type==='archer'||type==='crossbowman'){c.rotate(snap*.06);c.transform(1,0,-snap*.035,1,0,0);}
+      if(type==='archer'){c.rotate(snap*.06);c.transform(1,0,-snap*.035,1,0,0);}
       else if(type==='lancer'){c.translate(strike*12,0);c.transform(1,0,-strike*.09,1,0,0);}
-      else if(type==='slinger'){c.rotate(snap*.13);c.translate(strike*5,-strike*3);}
       else if(type==='guanyu'){c.rotate(-Math.sin(attackProgress*Math.PI*2)*(state==='skill'?.23:.14));}
       else if(type==='zhangfei'){c.scale(1+strike*.055,1-strike*(state==='skill'?.085:.045));c.rotate(snap*.04);}
       else if(type==='zhugeliang'){c.rotate(Math.sin(attackProgress*Math.PI*2)*.075);c.transform(1,0,-strike*.035,1,0,0);}
@@ -673,13 +701,6 @@ function drawFerry(t){
   paintedSign(game.ferryReady?'接应船 · 可以撤离':'接应船正在靠岸',dock.x-176,dock.y+5,214,33,18,'#36523d');
 }
 function drawMechanisms(t){
-  const ambush=game.ambush;
-  if(ambush&&!ambush.used){
-    const front=ambush.slots[0];ctx.save();ctx.strokeStyle='#d7bf7aaa';ctx.lineWidth=2;ctx.setLineDash([6,6]);
-    for(const slot of ambush.slots){ctx.beginPath();ctx.ellipse(slot.x,slot.y,54,12,0,0,Math.PI*2);ctx.stroke();}
-    ctx.setLineDash([]);drawArt(ctx,battleArt,'lure-prop',front.x-55,front.y-112,120);
-    paintedSign(ambush.name,front.x-78,front.y+12,156,30,18);ctx.restore();
-  }
   for(const m of game.mechanisms){
     if(m.id==='decoy'&&m.used)continue;
     const ready=!m.used&&game.bestProgress>=m.at;
@@ -730,24 +751,12 @@ function drawEffect(e) {
     ctx.restore();return;
   }
   ctx.save();
-  const zoneNames={sticky:'黏油',smoke:'烟幕','fire-line':'火线','wind-wall':'风障','scatter-stones':'碎石',rubble:'碎石'};
-  if(zoneNames[e.kind]){
+  if(e.kind==='smoke'){
     ctx.globalAlpha=Math.min(.8,e.life*.8);
-    if(e.kind==='smoke'){
-      for(let i=0;i<7;i++){ctx.fillStyle=i%2?'#b9c8c488':'#e1e1cc66';const x=e.x+Math.sin(i*7.3)*e.radius*.6,y=e.y-35-i%3*23-Math.sin(game.time*1.5+i)*9;ctx.beginPath();ctx.ellipse(x,y,e.radius*.42,35+i%3*9,0,0,Math.PI*2);ctx.fill();}
-      drawArt(ctx,battleArt,'smoke-prop',e.x-30,e.y-51,60);
-    }else if(e.kind==='sticky'){
-      ctx.fillStyle='#243343bb';ctx.beginPath();ctx.ellipse(e.x,e.y-7,e.radius,18,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#90b0bc88';ctx.lineWidth=2;
-      for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(e.x+(i-1.5)*e.radius*.4,e.y-10,16,4,0,0,Math.PI);ctx.stroke();}
-    }else if(e.kind==='wind-wall'){
-      ctx.strokeStyle='#a5e3d2';ctx.lineWidth=4;for(let i=0;i<5;i++){const shift=Math.sin(game.time*3+i)*10;ctx.beginPath();ctx.moveTo(e.x-e.radius,e.y-10-i*20);ctx.bezierCurveTo(e.x+shift,e.y-45-i*20,e.x-shift,e.y+10-i*20,e.x+e.radius,e.y-25-i*20);ctx.stroke();}
-    }else if(e.kind==='fire-line'){
-      for(let i=0;i<9;i++){const x=e.x+(i-4)*e.radius/4,flame=26+Math.sin(game.time*9+i*3)*12;ctx.fillStyle=i%2?'#f1b658bb':'#d86b36bb';ctx.beginPath();ctx.moveTo(x-10,e.y);ctx.quadraticCurveTo(x-14,e.y-14,x+4,e.y-flame);ctx.quadraticCurveTo(x+2,e.y-12,x+12,e.y);ctx.fill();}
-    }else{
-      for(let i=0;i<13;i++){const x=e.x+Math.sin(i*13)*e.radius*.9,y=e.y-4+Math.cos(i*7)*10;ctx.fillStyle=i%2?'#b8aa8c':'#7c8378';ctx.strokeStyle='#454d43';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-9,y);ctx.lineTo(x-5,y-10);ctx.lineTo(x+5,y-12);ctx.lineTo(x+10,y-1);ctx.closePath();ctx.fill();ctx.stroke();}
-    }
+    for(let i=0;i<7;i++){ctx.fillStyle=i%2?'#b9c8c488':'#e1e1cc66';const x=e.x+Math.sin(i*7.3)*e.radius*.6,y=e.y-35-i%3*23-Math.sin(game.time*1.5+i)*9;ctx.beginPath();ctx.ellipse(x,y,e.radius*.42,35+i%3*9,0,0,Math.PI*2);ctx.fill();}
+    drawArt(ctx,battleArt,'smoke-prop',e.x-30,e.y-51,60);
     ctx.globalAlpha=1;
-    text(ctx,zoneNames[e.kind],e.x,e.y+18,18,'#ffe6ad');
+    text(ctx,'烟幕',e.x,e.y+18,18,'#ffe6ad');
   }
   if(e.kind==='parachute-break'){ctx.globalAlpha=1-a;ctx.translate(e.x+a*35,e.y-120+a*80);ctx.rotate(a*.7);drawArt(ctx,battleArt,'broken-parachute',-75,-135,150);}
   if(e.kind==='rockfall'){
@@ -812,7 +821,7 @@ function drawEffect(e) {
   if(e.kind==='summon') { ctx.globalAlpha=1-a;ctx.strokeStyle=e.color;ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(e.x,e.y,30+a*42,8+a*7,0,0,Math.PI*2);ctx.stroke(); }
   if(e.kind==='log') { shadow(e.x,e.y,60);prop(ctx,'log',e.x,e.y,125,e.dir*(game.time*10)); }
   if(e.kind==='oil') {
-    ctx.globalAlpha=Math.min(1,e.life);if(!e.hideProp)prop(ctx,'oil',e.x,e.y,130);
+    ctx.globalAlpha=Math.min(1,e.life);prop(ctx,'oil',e.x,e.y,130);
     ctx.fillStyle='#e56c273b';ctx.beginPath();ctx.ellipse(e.x,e.y-4,e.radius,15,0,0,Math.PI*2);ctx.fill();
     for(let i=0;i<9;i++){const dx=(i-4)*e.radius*.22,h=25+(reducedMotion?0:Math.sin(game.time*10+i*2)*15);ctx.fillStyle=i%2?'#ffad3988':'#ee5b2877';ctx.beginPath();ctx.ellipse(e.x+dx,e.y-h*.5,11,h*.5,reducedMotion?0:Math.sin(game.time*4+i)*.2,0,Math.PI*2);ctx.fill();}
   }
@@ -871,7 +880,6 @@ function enemyDetails(e,p,dir,size,t) {
   if(e.windup>0){ctx.save();ctx.strokeStyle='#ff6d48';ctx.lineWidth=6;ctx.globalAlpha=.5+.3*Math.sin(t*18);ctx.beginPath();ctx.moveTo(p.x,p.y-6);ctx.lineTo(p.x+dir*250,p.y-6);ctx.stroke();text(ctx,'冲阵蓄力！',p.x,p.y-size-34,21,'#ffb486');ctx.restore();}
   if(e.commandWindup>0)text(ctx,e.role==='drummer'?'击鼓集结 · 可打断':'举旗悬赏 · 可打断',p.x,p.y-size-36,19,'#e5c4ff');
   if(e.root>0)text(ctx,'定身',p.x,p.y+20,17,'#cee9ef');
-  if(e.mark>0)text(ctx,'⚑',p.x,p.y-size-50,26,'#ffed89');
   if(e.bounty>0){banner(p.x-42,p.y-size-28,'赏','#927128');text(ctx,'赏金兵',p.x,p.y-size-32,17,'#ffe59c');}
   if(e.exhausted>0)text(ctx,'喘口气…',p.x,p.y-size-28,18,'#ead9b4');
   if(e.charge>0)speedLines(p.x,p.y,dir,t,'#ff8158');
@@ -885,7 +893,7 @@ function enemyDetails(e,p,dir,size,t) {
   }
   ctx.restore();ctx.save();
   if(e.role!=='soldier'&&!e.carrying){
-    const label=e.role==='shield'&&e.guard>0?'举盾 · 挡正面箭':e.role==='runner'&&e.dash>0?'冲刺！':e.role==='drummer'&&e.buff>0?'击鼓 · 加速':def.name;
+    const label=e.role==='caocao'?'曹操 · 碰到即败':e.role==='shield'&&e.guard>0?'举盾 · 挡正面箭':e.role==='runner'&&e.dash>0?'冲刺！':e.role==='drummer'&&e.buff>0?'击鼓 · 加速':def.name;
     ctx.font=canvasFont(18,true);const w=ctx.measureText(label).width+16;
     const box={x:p.x-w/2,y:p.y-size-24,w,h:22};
     if(!enemyLabelBoxes.some(b=>box.x<b.x+b.w+6&&box.x+box.w>b.x-6&&box.y<b.y+b.h+3&&box.y+box.h>b.y-3)){
@@ -921,26 +929,24 @@ function render() {
   const actors=[];
   const halfW=camera.width/(2*camera.scale),halfH=camera.height/(2*camera.scale);
   const visible=(x,y,size)=>x+size*.65>camera.x-halfW-40&&x-size*.65<camera.x+halfW+40&&y+40>camera.y-halfH&&y-size-60<camera.y+halfH;
-  for(const u of game.units){const s=u.moveS!==undefined?locate(u.moveS):SLOTS[u.slot];if(visible(s.x,s.y,actorSizes[u.type]||145))actors.push({kind:'unit',y:s.y,u,s});}
+  for(const u of game.units){const s=SLOTS[u.slot];if(visible(s.x,s.y,actorSizes[u.type]||145))actors.push({kind:'unit',y:s.y,u,s});}
   for(const enemy of game.enemies){if(enemy.airborne>0)continue;const p=locate(enemy.s);if(visible(p.x,p.y,actorSizes[enemy.type]||160))actors.push({kind:'enemy',y:p.y,enemy,p});}
   actors.sort((a,b)=>a.y-b.y);
   for(const item of actors){
     if(item.kind==='unit'){
       const {u,s}=item;shadow(s.x,s.y);
-      ctx.globalAlpha=u.folded?.35:1;
-      if(u.type==='lure'){drawArt(ctx,battleArt,'lure-prop',s.x-62,s.y-112,124);}
-      else if(u.type==='barricade'||TYPES[u.type].device)prop(ctx,u.type,s.x,s.y,u.type==='snare'?100:145,0,u.dir,u.attack,u.hit);
-      else actor(ctx,u.type,s.x,s.y,actorSizes[u.type],u.dir,u.casting>0?'skill':u.attack>0?'attack':u.moveS!==undefined?'run':'idle',u.attack>0?1-u.attack/(u.attackDuration||.4):t,u.hit);
-      ctx.globalAlpha=1;
-      if(u.moveS!==undefined)text(ctx,'调动中',s.x,s.y-140,18,'#aeeada');
-      if(u.type==='shieldbearer'||u.type==='ballista'||u.variant==='line-lance')text(ctx,u.fixedDir>0?'→':'←',s.x,s.y+16,26,'#ffdf95');
+      if(u.type==='barricade'||TYPES[u.type].device)prop(ctx,u.type,s.x,s.y,u.type==='snare'?100:145,0,u.dir,u.attack,u.hit);
+      else actor(ctx,u.type,s.x,s.y,actorSizes[u.type],u.dir,u.casting>0?'skill':u.attack>0?'attack':'idle',u.attack>0?1-u.attack/(u.attackDuration||.4):t,u.hit);
+      if(u.type==='shieldbearer'||u.type==='ballista')text(ctx,u.fixedDir>0?'→':'←',s.x,s.y+16,26,'#ffdf95');
       if(u.guard>0){ctx.strokeStyle='#f6be78';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(s.x,s.y-66,66,79,0,0,Math.PI*2);ctx.stroke();}
+      if(u.level>1)text(ctx,'★'.repeat(u.level-1),s.x,s.y-162,18,'#ffdf7a');
       if(u.hp<u.maxHp)health(s.x,s.y-153,u.hp,u.maxHp);
     }else{
       const {enemy:e,p}=item,dir=e.facing??p.dir*e.direction,size=actorSizes[e.type]*(e.role==='runner'?.91:1);shadow(p.x,p.y,40);
+      if(e.role==='caocao'){ctx.save();ctx.globalAlpha=.35+.15*Math.sin(t*4);ctx.fillStyle='#ff3b2a';ctx.beginPath();ctx.ellipse(p.x,p.y+2,size*.42,16,0,0,Math.PI*2);ctx.fill();ctx.restore();}
       actor(ctx,e.type,p.x,p.y,size,dir,e.attack>0?'attack':e.moving?'run':'idle',e.attack>0?1-e.attack/.35:e.moving?e.walk:t,e.hit);
       enemyDetails(e,p,dir,size,t);
-      if(e.hp<e.maxHp||e.carrying)health(p.x,p.y-actorSizes[e.type]-2,e.hp,e.maxHp,true);
+      if(e.hp<e.maxHp||e.carrying)health(p.x,p.y-size-2,e.hp,e.maxHp,true);
       if(e.carrying){
         // Lie Liu Bei across the shoulder instead of drawing him upright over it.
         ctx.save();ctx.translate(p.x+dir*7,p.y-actorSizes[e.type]*.70);ctx.rotate(-Math.PI*.46*dir);actor(ctx,'liubei',0,44,105,dir,'idle',t);ctx.restore();
