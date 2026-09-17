@@ -72,7 +72,7 @@ export class CampProfile{
  awardCommander(game,enemyId,role){const roster=[...(game.level.groups||[]),...(game.level.phases||[])];if(!game.runId||game.themeId!==this.themeId||game.level.tutorial||!(roster.some(p=>p.roles.includes(role))||game.caocao?.role===role))return 0;const amount=COMMANDERS[role]?.coins||0,key='kill:'+game.runId+':'+enemyId;if(!amount||this.data.claims.includes(key))return 0;this.data.coins+=amount;this.data.claims.push(key);this.data.claims=this.data.claims.slice(-100);this.save();return amount;}
  settle(game){
   if(!['won','lost'].includes(game.mode)||!game.runId||game.themeId!==this.themeId||this.data.claims.includes(game.runId))return null;
-  const won=game.mode==='won',prior=this.data.cleared[game.level.id]||[false,false,false],first=won&&!prior[0],earned=won?[true,game.captures===0,!game.guardUsed]:[false,false,false];
+  const won=game.mode==='won',prior=this.data.cleared[game.level.id]||[false,false,false],first=won&&!prior[0],earned=won?[true,game.captures===0,!game.liu.oilUsed]:[false,false,false];
   const reward=ECONOMY.levels[game.level.id]||{win:0,first:0},progress=Math.max(0,Math.min(1,game.bestProgress)),rewardAllowed=!game.level.tutorial||first;
   const base=!rewardAllowed?0:won?reward.win:progress>=ECONOMY.failureStart?Math.floor(reward.win*progress*ECONOMY.failureFraction):0,bonus=first?reward.first:0,medalCoins=rewardAllowed?earned.filter((v,i)=>v&&!prior[i]).length*ECONOMY.medalCoins:0,bossCoins=game.level.tutorial?0:game.bossCoins||0;
   this.data.coins+=base+bonus+medalCoins;if(won){this.data.wins++;this.data.cleared[game.level.id]=prior.map((v,i)=>v||earned[i]);}

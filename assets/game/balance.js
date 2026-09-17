@@ -4,23 +4,23 @@ export const GRID_SPACING=178;
 const grid=n=>GRID_SPACING*n;
 
 export const BATTLE={
-  startingGold:180,incomePerSecond:4,dismantleRefund:.5,deploymentDelay:.35,heroReadyDelay:2.5,
+  startingGold:180,incomePerSecond:4,dismantleRefund:.5,deploymentDelay:.35,
   upgrade:{maxLevel:3,perkLevel:2,costRatio:[.6,.9],hpMultiplier:1.3,damageMultiplier:1.3},
   contactRadius:35,trapRadius:50,hitRadius:40,
   hookStopDistance:45,cleaveRadius:90,cleaveMultiplier:.5,shieldBreakDuration:2.5,interruptRecovery:.6,
-  liu:{start:205,speed:34,dashDuration:3,dashMultiplier:2.4,dashCooldown:30},
-  guard:{damage:100,stun:2,radius:250,arrivalDelay:.8},
+  liu:{start:205,speed:34,dashDuration:3,dashMultiplier:3.6,
+    pullMultiplier:1.15,pullRange:grid(2),abandonLook:.6},
   enemy:{attackDelay:.3,abilityDelay:4,bossDistance:650,carryMultiplier:.85,slowMultiplier:.5,
-    turnDelay:.35,escortDistance:55,rallyDistance:70,smokeRevealDistance:80},
+    turnDelay:.35,escortDistance:55,rallyDistance:70},
   projectile:{arrowFlight:.22,antiAirStun:.8},
   spawnInterval:1.2
 };
 
 // Baseline: an archer needs six hits to kill a soldier; a barricade absorbs fourteen soldier hits.
 export const UNIT_STATS={
-  zhangfei:{cost:130,hp:360,damage:20,interval:1.5,range:120,skillTime:12,skillRange:220,skillDamage:24,stunDuration:2,guardDuration:2.5,guardDamageMultiplier:.6,castTime:.75},
-  guanyu:{cost:150,hp:270,damage:32,interval:1.5,range:165,skillTime:12,skillRange:220,skillDamage:64,castTime:.75},
-  zhugeliang:{cost:130,hp:120,damage:12,interval:1.8,range:grid(4),skillTime:14,skillRange:grid(4),skillDamage:28,skillRadius:140,slowDuration:2.5,knockback:grid(1),castTime:.75},
+  zhangfei:{cost:130,hp:360,damage:20,interval:1.5,range:120,skillTime:6,skillRange:220,skillDamage:24,stunDuration:2,guardDuration:2.5,guardDamageMultiplier:.6,castTime:.75},
+  guanyu:{cost:150,hp:270,damage:32,interval:1.5,range:165,skillTime:6,skillRange:220,skillDamage:64,castTime:.75},
+  zhugeliang:{cost:130,hp:120,damage:12,interval:1.8,range:grid(4),skillTime:7,skillRange:grid(4),skillDamage:28,skillRadius:140,slowDuration:2.5,knockback:grid(1),castTime:.75},
   archer:{cost:60,hp:90,damage:20,interval:1.5,range:grid(4)},
   lancer:{cost:65,hp:180,damage:20,interval:1.25,range:grid(2),braceTime:1.4,braceCooldown:2,braceStun:1},
   shieldbearer:{cost:85,hp:270,damage:12,interval:1.5,range:100,blockCooldown:3,turnRecovery:1.2,swapCooldown:4},
@@ -51,21 +51,19 @@ export const ENEMY_STATS={
   drummer:{hp:150,speed:60,damage:12,interval:1.5,reward:9,commandRadius:300,windup:1.5,skillCooldown:9,buffDuration:4,buffMultiplier:1.2},
   airborne:{hp:100,speed:72,damage:16,interval:1.2,reward:8},
   caohong:{hp:480,speed:64,damage:26,interval:1.4,reward:25,commandRadius:300,windup:1.5,skillCooldown:10,bountyDuration:6,bountyReward:10},
-  xiahou:{hp:660,speed:62,damage:32,interval:1.5,reward:35,windup:1.3,skillCooldown:10,chargeDuration:1.2,chargeMultiplier:2.1,chargeDamage:90,barricadeDamage:130,recovery:3},
+  xiahou:{hp:660,speed:62,damage:32,interval:1.5,reward:35,windup:.55,skillCooldown:10,chargeDuration:1.2,chargeMultiplier:2.1,chargeDamage:90,barricadeDamage:130,recovery:3},
   caocao:{hp:1400,speed:52,damage:40,interval:1.4,reward:80}
 };
-
-export const TACTIC_STATS={smoke:{cost:30,duration:6,radius:grid(1)}};
 
 const diluMount={speedMultiplier:10,pickupRadius:24};
 export const LEVEL_TUNING={
   changban:{mount:diluMount,phases:{start:{at:0,delay:6,interval:3},bridge:{at:.16,interval:3.5},end:{at:.32,interval:3.5}}},
-  river:{startingGoldBonus:40,intro:{progress:.20,talkDuration:2.2,runDuration:1.2,replyDuration:2.2},
+  river:{startingGoldBonus:40,
     warGong:{at:0,radius:grid(3),knockback:grid(1)},
     caocao:{at:.5,rally:8},
-    bite:{caught:.5,close:1,step:2},
-    airborneAhead:1.5,airborneWarning:4,
-    gate:{warning:4,safeDistance:260}}
+    bite:{caught:.2,miss:.4,close:1,step:2},
+    airborneAhead:3,airborneWarning:4,airborneLandSeconds:8,
+    gate:{}}
 };
 
 export const ECONOMY={

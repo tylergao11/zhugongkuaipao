@@ -154,7 +154,7 @@ export function createCamp(profile,onChanged,onLaunch,canLaunch,options={}){
   }
   function cardDialog(d){
     const def=unitStatsFor(d.id,profile.data.fitted[d.id]),owned=profile.ownsCard(d.id),selected=profile.data.deck.includes(d.id);
-    return {title:'武将与军备',body:'<div class="unit-portrait">'+icon(d.id)+'<span class="portrait-caption">'+(def.skill||role(d.id))+'</span></div><div class="unit-parchment"><div class="unit-scroll"'+scrollAttrs('unit:'+d.id)+'><span class="camp-eyebrow">'+role(d.id)+' · '+(owned?'已拥有':unlockText(d.id))+'</span><h3 class="unit-title">'+def.name+'</h3><div class="camp-note"><p>'+esc(def.help)+'</p>'+(def.skill?'<p>主动技能 · 冷却 '+def.skillTime+' 秒</p>':'')+'</div>'+unitStats(d.id)+equipmentPanel(d.id)+'</div></div>',footer:owned?action(selected?'移出编队':replacing?'换入阵容':'加入编队','toggle-card',d.id)+(selected?action('替换','choose',d.id,true):''):''};
+    return {title:'武将与军备',body:'<div class="unit-portrait">'+icon(d.id)+'<span class="portrait-caption">'+(def.skill||role(d.id))+'</span></div><div class="unit-parchment"><div class="unit-scroll"'+scrollAttrs('unit:'+d.id)+'><span class="camp-eyebrow">'+role(d.id)+' · '+(owned?'已拥有':unlockText(d.id))+'</span><h3 class="unit-title">'+def.name+'</h3><div class="camp-note"><p>'+esc(def.help)+'</p>'+(def.skill?'<p>自动技能 · 冷却 '+def.skillTime+' 秒</p>':'')+'</div>'+unitStats(d.id)+equipmentPanel(d.id)+'</div></div>',footer:owned?action(selected?'移出编队':replacing?'换入阵容':'加入编队','toggle-card',d.id)+(selected?action('替换','choose',d.id,true):''):''};
   }
   function equipmentPanel(id){
     if(!profile.ownsCard(id)||TYPES[id].tactic)return '';

@@ -46,13 +46,14 @@ export class FrameBudget {
 
 // Camera values are world coordinates; HUD and cards stay outside this layer.
 export class BattleCamera {
-  constructor(){this.x=720;this.y=530;this.width=1;this.height=1;this.scale=1;this.detail=false;this.follow=true;this.initialized=false;}
+  constructor(){this.x=720;this.y=530;this.width=1;this.height=1;this.scale=1;this.baseScale=1;this.detail=false;this.follow=true;this.initialized=false;}
   resize(width,height,compact=false){
     this.width=Math.max(1,width);this.height=Math.max(1,height);
     this.fit=Math.min(this.width/1440,this.height/645);
     this.detailZoom=Math.max(1.4,Math.min(2.8,.55/this.fit));
     if(!this.initialized){this.detail=compact;this.initialized=true;}
-    this.scale=this.fit*(this.detail?this.detailZoom:1);this.clamp();
+    this.baseScale=this.fit*(this.detail?this.detailZoom:1);
+    this.scale=this.baseScale;this.clamp();
   }
   clamp(){
     const hx=this.width/(2*this.scale),hy=this.height/(2*this.scale);
@@ -61,6 +62,10 @@ export class BattleCamera {
   }
   get offset(){return{x:this.width/2-this.x*this.scale,y:this.height/2-this.y*this.scale};}
   worldPoint(x,y){return{x:this.x+(x-this.width/2)/this.scale,y:this.y+(y-this.height/2)/this.scale};}
+  inView(x,y,pad=80){
+    const hx=this.width/(2*this.scale),hy=this.height/(2*this.scale);
+    return x>this.x-hx+pad&&x<this.x+hx-pad&&y>this.y-hy+pad&&y<this.y+hy-pad;
+  }
   edgeIndicator(x,y,insets={}){
     const offset=this.offset,px=x*this.scale+offset.x,py=y*this.scale+offset.y;
     if(px>=0&&px<=this.width&&py>=0&&py<=this.height)return null;
@@ -71,7 +76,19 @@ export class BattleCamera {
     return{x:Math.max(left,Math.min(right,cx+dx*reach)),y:Math.max(top,Math.min(bottom,cy+dy*reach)),angle:Math.atan2(dy,dx)*180/Math.PI};
   }
   pan(dx,dy){this.follow=false;this.x-=dx/this.scale;this.y-=dy/this.scale;this.clamp();}
-  focus(x,y){this.x=x;this.y=y-85;this.follow=true;this.clamp();}
-  track(x,y,dt){const k=1-Math.exp(-dt*4);this.x+=(x-this.x)*k;this.y+=(y-85-this.y)*k;this.clamp();}
-  toggleZoom(){this.detail=!this.detail;this.scale=this.fit*(this.detail?this.detailZoom:1);this.clamp();}
+  focus(x,y){this.x=x;this.y=y-85;this.follow=true;this.scale=this.baseScale;this.clamp();}
+  track(x,y,dt){const k=1-Math.exp(-dt*4);this.x+=(x-this.x)*k;this.y+=(y-85-this.y)*k;this.scale+=(this.baseScale-this.scale)*k;this.clamp();}
+  framePair(ax,ay,bx,by){
+    const pad=140;
+    let scale=this.baseScale;
+    for(let i=0;i<10;i++){
+      const needW=Math.abs(bx-ax)+pad*2,needH=Math.abs(by-ay)+pad*2;
+      scale=Math.min(this.baseScale,this.width/Math.max(needW,1),this.height/Math.max(needH,1),scale);
+      scale=Math.max(this.fit*0.45,scale);
+      this.scale=scale;this.x=(ax+bx)/2;this.y=(ay+by)/2-40;this.clamp();
+      if(this.inView(ax,ay,48)&&this.inView(bx,by,48))break;
+      scale*=0.86;
+    }
+  }
+  toggleZoom(){this.detail=!this.detail;this.baseScale=this.fit*(this.detail?this.detailZoom:1);this.scale=this.baseScale;this.clamp();}
 }

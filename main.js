@@ -31,9 +31,9 @@ const loadedAssets = new Map();
 let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let soundEnabled = true, soundTime = 0, toastUntil = 0, uiMode = '', speechUntil = 0, speech = '';
 let music, soundRequest=0, starting=false;
-let idleClock = 0,nextWarDrum=0,introCameraDetail=null,biteAlarmed=false;
+let idleClock = 0,nextWarDrum=0,biteAlarmed=false;
 let battleSpeed = 1;
-let inspectedSlot = null, swapSource=null, skillPress=null;
+let inspectedSlot = null, swapSource=null;
 const backgroundCache=new Map();
 let mechanismsMarkup='';
 let drag = null;
@@ -44,7 +44,7 @@ let pan=null,lastCameraManual=0;
 function markCameraManual(){camera.follow=false;lastCameraManual=performance.now();}
 const camp=createCamp(profile,()=>{
   if(game.mode==='ready'){game.reset(profile.snapshot());showLoadoutCards();updateUI();}
-},()=>void begin(),()=>ready&&!starting&&!['running','paused','intro'].includes(game.mode),{point:stagePoint,feedback:kind=>sound(kind),canClose:()=>game.mode!=='ready'});
+},()=>void begin(),()=>ready&&!starting&&!['running','paused'].includes(game.mode),{point:stagePoint,feedback:kind=>sound(kind),canClose:()=>game.mode!=='ready'});
 const battlePopup=createBattlePopup($('battle-popup'),{
   resume:()=>void begin(),
   restart:()=>{game.reset(profile.snapshot());showLoadoutCards();updateUI();camp.open('deck');},
@@ -112,8 +112,6 @@ $('zoom-view').addEventListener('click',()=>{closeUnitMenu();camera.toggleZoom()
 function followLiu(){clearDrag();stopPan();closeUnitMenu();camera.follow=true;const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();updateLiuIndicator();}
 $('liu-indicator').addEventListener('click',followLiu);
 $('view-gate').addEventListener('click',()=>{if(!game.caozhangGateOpen)return;clearDrag();stopPan();closeUnitMenu();camera.focus(game.gate.x,game.gate.y);markCameraManual();applyCamera();});
-$('guard').addEventListener('click',()=>{if(game.summonGuard()){clearDrag();closeUnitMenu();const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();processEvents();updateUI();}});
-
 function battlefieldPoint(clientX,clientY) {
   const point=stagePoint(clientX,clientY),by=point.y-battle.offsetTop;
   if(point.x<0||point.x>battle.clientWidth||by<0||by>battle.clientHeight)return;
@@ -151,17 +149,12 @@ function updateLiuIndicator(){
   button.setAttribute('aria-label',game.liu.carrier?'主公被擒且在画面外，点击跟随营救':'主公在画面外，点击跟随主公');
 }
 function clearDrag() {
-  if(skillPress){const p=skillPress;skillPress=null;if(p.button.hasPointerCapture(p.pointerId))p.button.releasePointerCapture(p.pointerId);}
   swapSource=null;const previous=drag;drag=null;game.selected=null;
   $('drag-preview').hidden=true;
   slots.forEach(slot=>slot.classList.remove('drag-over'));
   if(previous){previous.button.classList.remove('dragging');if(previous.button.hasPointerCapture(previous.pointerId))previous.button.releasePointerCapture(previous.pointerId);}
 }
 function moveDrag(event) {
-  if(skillPress?.pointerId===event.pointerId){
-    if(Math.hypot(event.clientX-skillPress.x,event.clientY-skillPress.y)>12)skillPress.moved=true;
-    return;
-  }
   if(!drag||event.pointerId!==drag.pointerId)return;
   event.preventDefault();
   drag.clientX=event.clientX;drag.clientY=event.clientY;
@@ -186,7 +179,7 @@ function refreshDrag(){
 function startDrag(event,type,button) {
   if(drag||!event.isPrimary||event.button!==0||game.mode!=='running')return;
   event.preventDefault();stopPan();swapSource=null;closeUnitMenu();
-  if(TYPES[type].skill&&game.units.some(u=>u.type===type)){skillPress={type,pointerId:event.pointerId,x:event.clientX,y:event.clientY,button};button.setPointerCapture(event.pointerId);return;}
+  if(TYPES[type].unique&&game.units.some(u=>u.type===type))return;
   if(!game.isUnlocked(type)){toast('尚未解锁');return;}
   if(!game.isEquipped(type)){toast('未编入阵容');return;}
   if(!game.canBuy(type)){toast(game.tacticsUsed.has(type)?'本局已用':game.cooldowns[type]>0?`冷却 ${Math.ceil(game.cooldowns[type])} 秒`:game.gold<game.types[type].cost?'军饷不足':'武将已上阵');return;}
@@ -195,15 +188,6 @@ function startDrag(event,type,button) {
   updateUI();moveDrag(event);
 }
 function finishDrag(event,cancelled=false) {
-  if(skillPress?.pointerId===event.pointerId){
-    const press=skillPress;skillPress=null;
-    if(press.button.hasPointerCapture(event.pointerId))press.button.releasePointerCapture(event.pointerId);
-    if(!cancelled&&!press.moved&&Math.hypot(event.clientX-press.x,event.clientY-press.y)<12){
-      if(!game.useSkill(press.type)&&game.heroCooldowns[press.type]>0)toast('技能还需 '+Math.ceil(game.heroCooldowns[press.type])+' 秒');
-      processEvents();updateUI();
-    }
-    return;
-  }
   if(!drag||event.pointerId!==drag.pointerId)return;
   event.preventDefault();
   const slot=cancelled?null:dropSlot(event.clientX,event.clientY);
@@ -297,20 +281,16 @@ function createControls() {
     button.addEventListener('pointerup',event=>finishDrag(event));
     button.addEventListener('pointercancel',event=>finishDrag(event,true));
     button.addEventListener('lostpointercapture',event=>finishDrag(event,true));
-    button.addEventListener('click',event=>{event.preventDefault();if(event.detail===0&&game.mode==='running'&&TYPES[type].skill){game.useSkill(type);processEvents();updateUI();}});
+    button.addEventListener('click',event=>event.preventDefault());
     button.addEventListener('contextmenu',event=>event.preventDefault());
     $('cards').append(button); cards.set(type,{button,icon,cost,skill,meter,fill});
   }
-  $('liu-dash').addEventListener('click',()=>{
-    if(!game.useLiuDash()){toast(game.liu.carrier||game.liu.mounted?'现在用不了脚底抹油':game.liuDashCooldown>0?`冷却 ${Math.ceil(game.liuDashCooldown)} 秒`:'现在用不了');return;}
-    processEvents();updateUI();
-  });
   showLoadoutCards();
 }
 
 function updateUI() {
-  music?.setActive((['running','intro'].includes(game.mode)||starting)&&!document.hidden);
-  if(game.mode!=='running'){if(drag||skillPress)clearDrag();if(pan)stopPan();}
+  music?.setActive((game.mode==='running'||starting)&&!document.hidden);
+  if(game.mode!=='running'){if(drag)clearDrag();if(pan)stopPan();}
   if(inspectedSlot!==null && (!game.units.some(u=>u.slot===inspectedSlot)||game.mode!=='running'))closeUnitMenu();
   $('gold').textContent=Math.floor(game.gold);
   document.querySelector('.hud h1 small').textContent=(game.level.boss?'BOSS · ':'')+game.level.name+(game.level.tutorial?' · 教学关':'');
@@ -322,9 +302,7 @@ function updateUI() {
   const mechanismsHTML=game.mechanisms.map(m=>{const locked=game.bestProgress<m.at,label=m.used?'已使用':locked?'行至 '+Math.round(m.at*100)+'%':m.targetSlot?'正下方砸击 · 一次':'点击发动 · 一次';return '<button data-mechanism="'+m.id+'" title="'+m.name+'：'+label+'" '+(m.used||locked||game.mode!=='running'?'disabled':'')+'>'+artIcon(m.used&&m.id==='rockfall'?'rockfall-spent':m.id)+'<span><b>'+m.name+'</b><small>'+label+'</small></span></button>';}).join('');
   if(mechanismsMarkup!==mechanismsHTML){mechanismsMarkup=mechanismsHTML;$('mechanism-tools').innerHTML=mechanismsHTML;}
   $('battle-pause').disabled=!['running','paused'].includes(game.mode);$('battle-pause').textContent=game.mode==='paused'?'继续':'暂停';
-  $('zoom-view').disabled=game.mode==='intro';$('battle-speed').disabled=game.mode==='intro';
-  $('guard').textContent=game.guardUsed?'护驾 · 本局已用':'护驾 · 仅一次';
-  $('guard').disabled=game.guardUsed||game.mode!=='running';
+  $('zoom-view').disabled=false;$('battle-speed').disabled=false;
   const gateActive=game.caozhangGateOpen&&game.mode!=='ready'&&game.mode!=='won';
   const gateOpening=game.mode==='running'&&game.gateWarningAt!==null&&(!game.caozhangGateOpen||game.time-game.caozhangGateOpenedAt<3);
   stage.classList.toggle('gate-open',gateActive);stage.classList.toggle('gate-opening',gateOpening);
@@ -340,41 +318,40 @@ function updateUI() {
   $('progress-fill').parentElement.classList.toggle('captured',!!game.liu.carrier);
   const marker=$('caocao-marker'),cc=game.caocao;
   {const show=!!cc&&cc.hp>0&&!cc.escaped&&['running','paused'].includes(game.mode);marker.hidden=!show;if(show)marker.style.left=`${Math.min(100,Math.max(0,cc.s/ROUTE_LENGTH*100))}%`;}
-  const chaser=game.nearestChaser?.()||null,chase=$('chase-marker');
+  const chaser=game.nearestChaser?.()||null,chase=$('chase-marker'),liuMark=$('liu-marker');
   {const show=!!chaser&&['running','paused'].includes(game.mode);chase.hidden=!show;if(show)chase.style.left=`${Math.min(100,Math.max(0,chaser.s/ROUTE_LENGTH*100))}%`;}
+  {const show=['running','paused'].includes(game.mode);liuMark.hidden=!show;if(show)liuMark.style.left=`${pct}%`;}
   const bite=$('bite-hint'),inBattle=['running','paused'].includes(game.mode)&&!!game.level.groups;
   bite.hidden=!inBattle;
   if(inBattle){
-    const caught=game.liu.carrier,grids=game.biteDistance(),near=!caught&&Number.isFinite(grids)&&grids<=game.biteThresholds().caught;
+    const caught=game.liu.carrier,band=game.biteBand?.()||'none',near=!caught&&(band==='caught'||band==='miss');
     bite.textContent=caught?`离${game.exitName()} · 还剩 ${Math.round(game.exitRemainGrids()*10)/10} 格`:game.biteLabel();
     bite.classList.toggle('is-close',near||caught);
+    stage.classList.toggle('bite-caught',near||caught);
     if(near&&!biteAlarmed){biteAlarmed=true;impact(true);}
     if(!near)biteAlarmed=false;
-  }else biteAlarmed=false;
-  const dash=$('liu-dash'),cd=$('liu-dash-cd');
-  dash.disabled=!game.canLiuDash();
-  dash.classList.toggle('is-ready',game.canLiuDash());
-  dash.classList.toggle('is-cooling',game.liuDashCooldown>0);
-  dash.style.setProperty('--dash-left',String(game.liuDashCooldown>0?1-game.liuDashCooldown/BATTLE.liu.dashCooldown:1));
-  if(game.liuDashCooldown>0){cd.hidden=false;cd.textContent=Math.ceil(game.liuDashCooldown);}else cd.hidden=true;
-  $('escape-label').textContent=game.liu.carrier ? `正被押往${game.exitName()}` : game.liu.mounted?'刘备 · 的卢疾驰':game.liu.dash>0?'刘备 · 脚底抹油！':game.plankOpen?'刘备逃脱 · 栈道口已开':gateActive?'刘备逃脱 · 登岸口已开':'刘备逃脱进度';
+  }else{biteAlarmed=false;stage.classList.remove('bite-caught');}
+  const oil=$('oil-hint'),inOil=['running','paused'].includes(game.mode);
+  oil.hidden=!inOil;
+  oil.textContent=game.liu.dash>0?'的卢 · '+Math.ceil(game.liu.dash):game.liu.oilUsed?'的卢 · 已用':'的卢 · 就绪';
+  $('escape-label').textContent=game.liu.carrier ? `正被押往${game.exitName()}` : game.plankOpen?'刘备逃脱 · 栈道口已开':gateActive?'刘备逃脱 · 登岸口已开':'刘备逃脱进度';
   for (const [type,{button,skill,meter,fill}] of cards) {
-    button.disabled=game.mode==='intro';
+    button.disabled=false;
     const def=game.types[type],unit=game.units.find(u=>u.type===type),deployed=def.unique&&!!unit;
     button.classList.toggle('selected',game.selected===type);
-    button.classList.toggle('unavailable',deployed?unit.skillCooldown>0:!game.canBuy(type));
+    button.classList.toggle('unavailable',!deployed&&!game.canBuy(type));
     button.classList.toggle('locked',!game.isUnlocked(type));
     button.classList.toggle('stored',game.isUnlocked(type)&&!game.isEquipped(type));
     button.classList.toggle('deployed',!!deployed);
-    button.setAttribute('aria-label',deployed?'施放'+def.name+' · '+def.skill:'拖拽'+def.name+'，'+def.cost+'军饷');
+    button.setAttribute('aria-label',deployed?def.name+'已上阵 · '+def.skill:'拖拽'+def.name+'，'+def.cost+'军饷');
     button.title=def.name+' · '+def.help;
     if(def.tactic){skill.hidden=false;skill.textContent=game.tacticsUsed.has(type)?'本局已用':'每局一次';}
     button.classList.toggle('tactic-card',!!def.tactic);
     button.setAttribute('aria-pressed',String(game.selected===type));
     if(def.skill){
-      skill.textContent=unit?`${def.shortSkill} · ${unit.skillCooldown>0?Math.ceil(unit.skillCooldown)+'秒':'点击施放'}`:`${def.shortSkill} · 主动`;
+      skill.textContent=unit?`${def.shortSkill} · ${unit.skillCooldown>0?Math.ceil(unit.skillCooldown)+'秒':'自动'}`:`${def.shortSkill} · 自动`;
       meter.hidden=!unit;fill.style.width=unit?`${Math.max(0,1-unit.skillCooldown/def.skillTime)*100}%`:'0%';
-      button.classList.toggle('skill-ready',!!unit&&unit.skillCooldown<=0);
+      button.classList.remove('skill-ready');
     }else if(def.cooldown){
       const remaining=game.cooldowns[type]||0;
       button.classList.toggle('cooling',remaining>0);
@@ -392,7 +369,7 @@ function updateUI() {
   }
   if (uiMode!==game.mode) {
     uiMode=game.mode;
-    if (game.mode==='running'||game.mode==='intro') $('overlay').hidden=true;
+    if (game.mode==='running') $('overlay').hidden=true;
     else if (game.mode!=='ready') showOverlay(game.mode);
   }
 }
@@ -438,10 +415,9 @@ async function begin() {
   if (game.mode==='paused') { game.mode='running'; }
   else {
     game.reset(profile.snapshot());setBattleSpeed(1);game.start();showLoadoutCards();
-    if(game.intro){speech='';introCameraDetail=camera.detail;camera.detail=false;layoutCamera();}
-    else say(game.level.boss?'船就在前面，别让他们咬住！':'我先探路，你们慢聊！',3);
+    say(game.level.boss?'船就在前面，别让他们咬住！':'我先探路，你们慢聊！',3);
     game.nextTalk=3;skillBannerUntil=0;impactPause=0;nextWarDrum=0;biteAlarmed=false;
-    const p=locate(game.liu.s),horse=game.intro&&locate(game.intro.s);camera.focus(horse?(p.x+horse.x)/2:p.x,p.y);applyCamera();
+    const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();
   }
   accumulated=0; previous=performance.now(); updateUI();
 }
@@ -476,7 +452,7 @@ async function startSound(notify=false,forStart=false) {
     getMusic();
     if(!music.ready)throw new Error('背景音乐尚未加载完成');
     void music.unlock().catch(error=>console.warn('Sound effects unavailable',error));
-    music.setActive((forStart||['running','intro'].includes(game.mode))&&!document.hidden);
+    music.setActive((forStart||game.mode==='running')&&!document.hidden);
     await music.enable();
     if(request!==soundRequest)return false;
     if(notify){sound('place');toast('声音已开启');}
@@ -541,7 +517,6 @@ window.addEventListener('blur',()=>{stopPan();if(drag){clearDrag();updateUI();}}
 
 function processEvents() {
   for (const e of game.events.splice(0)) {
-    if(e.type==='intro-end'){camera.detail=introCameraDetail??camera.detail;introCameraDetail=null;layoutCamera();const p=locate(game.liu.s);camera.focus(p.x,p.y);applyCamera();speech='';speechUntil=0;}
     if(e.type==='start'&&game.level.boss){$('skill-banner').textContent='BOSS 关 · '+game.level.name;$('skill-banner').style.setProperty('--skill-color','#ff936e');skillBannerUntil=game.time+2.5;toast('军饷 +'+game.level.startingGoldBonus,2.5);}
     if (e.text&&e.type!=='talk') toast(e.text,e.type==='capture'?3.5:2.5);
     if (e.type==='capture') {say('抓错啦！我就是个卖草鞋的！',4);impact(true);}
@@ -570,12 +545,11 @@ function processEvents() {
       ],{duration:2600,easing:'ease-out'});
     }
     if(e.type==='skill'){
-      $('skill-banner').textContent=`${e.hero==='zhaoyun'?'赵子龙':TYPES[e.hero]?.name||'刘备'} · ${e.skill}`;
+      $('skill-banner').textContent=`${TYPES[e.hero]?.name||'刘备'} · ${e.skill}`;
       $('skill-banner').style.setProperty('--skill-color',e.color);skillBannerUntil=game.time+1.25;
       const card=cards.get(e.hero)?.button;if(card)card.animate([{boxShadow:`0 0 25px ${e.color}`,transform:'translateY(-5px)'},{boxShadow:'none',transform:'translateY(0)'}],{duration:450});
       impact(true);sound('rescue');
     }
-    if(e.type==='guard-land'){impact(true);sound('rescue');}
     if(e.type==='mechanism'){impact(true);sound(e.mechanismId==='war-gong'?'gong':'rescue');}
     if(e.type==='caocao'){$('skill-banner').textContent='曹操亲至 · 全军加速 · 被他碰到直接判负';$('skill-banner').style.setProperty('--skill-color','#d8362a');skillBannerUntil=game.time+3.2;game.shake=.5;impact(true);sound('capture');sound('war-drum');continue;}
     if(e.type==='upgrade'){sound('place');}
@@ -627,7 +601,7 @@ function actor(c,type,x,y,size,dir=1,state='idle',phase=0,flash=0,alpha=1) {
   let cw=sheet.width/columns,ch=sheet.height/rows,sx=(index%columns)*cw,sy=Math.floor(index/columns)*ch;
   const run=state==='run'||state==='carry', attack=state==='attack'||state==='skill', dying=state==='death';
   const attackProgress=Math.min(1,Math.max(0,phase)), strike=Math.sin(attackProgress*Math.PI);
-  const clock=game.mode==='ready'?idleClock:game.intro?.time??game.time,beat=clock*(type==='zhugeliang'?3.1:type==='zhangfei'?2.6:3.7)+x*.023+y*.009;
+  const clock=game.mode==='ready'?idleClock:game.time,beat=clock*(type==='zhugeliang'?3.1:type==='zhangfei'?2.6:3.7)+x*.023+y*.009;
   c.save();c.globalAlpha=alpha;
   c.translate(x+(attack?strike*dir*4:0),y);
   c.scale(dir,1);
@@ -687,13 +661,12 @@ function drawBackground(t) {
   if(!reducedMotion)for(let i=0;i<11;i++){const x=(i*137+37)%1440,y=130+(i*79-t*17)%500;ctx.globalAlpha=(Math.sin(t*2+i)+1)*.18;ctx.fillStyle='#f8b66a';ctx.fillRect(x,y,2,3);}ctx.globalAlpha=1;
 }
 function drawCaozhangGate(t){
-  if(game.gateWarningAt===null)return;
-  const {x,y}=game.gate,enter=game.caozhangGateOpen?1:Math.min(1,(t-game.gateWarningAt)/game.level.gate.warning);
-  const boatX=x+(1-enter)*230,bob=reducedMotion?0:Math.sin(t*2.5)*2;
+  if(!game.caozhangGateOpen||!game.gate)return;
+  const {x,y}=game.gate,bob=reducedMotion?0:Math.sin(t*2.5)*2;
   ctx.save();
-  drawArt(ctx,battleArt,'enemy-boat',boatX-135,y-239+bob,270);
-  if(game.caozhangGateOpen){ctx.fillStyle='#f06a4244';ctx.beginPath();ctx.ellipse(x,y+1,80,12,0,0,Math.PI*2);ctx.fill();}
-  paintedSign(game.caozhangGateOpen?'敌船 · 抓回此处即败':'敌船正在靠岸',x-125,y+3,244,34,18,'#8c291e');
+  drawArt(ctx,battleArt,'enemy-boat',x-135,y-239+bob,270);
+  ctx.fillStyle='#f06a4244';ctx.beginPath();ctx.ellipse(x,y+1,80,12,0,0,Math.PI*2);ctx.fill();
+  paintedSign('敌船 · 抓回此处即败',x-125,y+3,244,34,18,'#8c291e');
   ctx.restore();
 }
 function drawFerry(t){
@@ -722,24 +695,12 @@ function drawMechanisms(t){
     ctx.restore();
   }
 }
-function drawMount(p,mounted=false){
+function drawMount(p,mounted=false,travel=Math.max(0,game.liu.walk-game.liu.mountWalk)){
   const {size,footAnchor,stride,frames}=MOUNT_ART;
-  const travel=Math.max(0,game.liu.walk-game.liu.mountWalk),frame=Math.floor(travel/stride*frames.length)%frames.length;
+  const frame=Math.floor(travel/stride*frames.length)%frames.length;
   const sprite=mounted?(reducedMotion||game.mode==='won'?'dilu-mounted':frames[frame]):'dilu-wait';
-  shadow(p.x,p.y,size*.27);ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.dir,1);
+  shadow(p.x,p.y,size*.27);ctx.save();ctx.translate(p.x,p.y);ctx.scale(p.dir||1,1);
   drawArt(ctx,battleArt,sprite,-size/2,-size*footAnchor,size);ctx.restore();
-}
-function drawIntroHorse(){
-  const intro=game.intro;if(!intro||intro.phase==='reply')return;
-  const p=locate(intro.s),running=intro.phase==='flee';
-  if(running){
-    const progress=Math.min(1,(intro.time-intro.talkDuration)/intro.runDuration);
-    p.x+=(WIDTH+MOUNT_ART.size-p.x)*progress;
-    if(!reducedMotion)p.y-=Math.abs(Math.sin(intro.time*24))*8;
-    speedLines(p.x,p.y,p.dir,intro.time);
-  }
-  drawMount(p);
-  if(!running)speechBubble(p.x,p.y-55,intro.horseLine,30);
 }
 function drawEffect(e) {
   const a=1-e.life/e.maxLife;
@@ -773,23 +734,11 @@ function drawEffect(e) {
     if(!e.small){ctx.strokeStyle='#e6cf83';ctx.setLineDash([5,5]);ctx.beginPath();ctx.ellipse(e.tx,e.ty+60,90,15,0,0,Math.PI*2);ctx.stroke();}
   }
   if(e.kind==='snare-hit'){ctx.globalAlpha=1-a;ctx.strokeStyle='#e9d08d';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(e.x,e.y-14-a*30,30+a*24,16,0,0,Math.PI*2);ctx.stroke();text(ctx,'绊！',e.x,e.y-60-a*60,36,'#e7e7b6');}
-  if(e.kind==='guard-arrival'){
-    const age=e.maxLife-e.life,fall=Math.min(1,age/.8),after=Math.max(0,age-.8);
-    const y=e.y-(1-fall*fall)*460;
-    const squash=after<.2?Math.sin(after/.2*Math.PI)*.18:0;
-    ctx.globalAlpha=Math.min(1,e.life/.55);
-    if(fall<1){ctx.strokeStyle='#d2efff';ctx.lineWidth=4;for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(e.x+i*24,y-215-i%2*25);ctx.lineTo(e.x+i*24,y-290-i%2*20);ctx.stroke();}}
-    ctx.translate(e.x,y);ctx.rotate(fall<1?Math.sin(age*16)*.12:Math.sin(after*11)*.018);ctx.scale(e.dir*(1+squash),1-squash);
-    if(images.zhaoyun)ctx.drawImage(images.zhaoyun,-137,-270-Math.sin(after*5)*2,274,274);
-    ctx.restore();ctx.save();
-    if(after>.2&&e.life>.55)speechBubble(e.x,e.y-145,after<1.4?'主公别慌！孩子没醒！':'阿斗：这车有点颠！');
-  }
-  if(e.kind==='landing'||e.kind==='guard-impact'){
-    const big=e.kind==='guard-impact',r=(big?45:15)+a*(big?245:70);
-    ctx.globalAlpha=1-a;ctx.strokeStyle=big?'#c4edff':'#d8c6a3';ctx.lineWidth=big?10*(1-a)+2:3;
+  if(e.kind==='landing'){
+    const r=15+a*70;
+    ctx.globalAlpha=1-a;ctx.strokeStyle='#d8c6a3';ctx.lineWidth=3;
     ctx.beginPath();ctx.ellipse(e.x,e.y,r,r*.22,0,0,Math.PI*2);ctx.stroke();
-    for(let i=0;i<9;i++){const angle=i*.73;ctx.fillStyle=big?'#eee0b8':'#c4aa85';ctx.beginPath();ctx.ellipse(e.x+Math.cos(angle)*r,e.y-6-Math.abs(Math.sin(angle))*r*.22,8*(1-a)+2,5,0,0,Math.PI*2);ctx.fill();}
-    if(big&&a<.55){text(ctx,'轻点！娃睡着了！',e.x,e.y-30-a*85,28,'#ffebb6');}
+    for(let i=0;i<9;i++){const angle=i*.73;ctx.fillStyle='#c4aa85';ctx.beginPath();ctx.ellipse(e.x+Math.cos(angle)*r,e.y-6-Math.abs(Math.sin(angle))*r*.22,8*(1-a)+2,5,0,0,Math.PI*2);ctx.fill();}
   }
   if(e.kind==='death') {
     if(e.type==='barricade'||TYPES[e.type]?.device){ctx.globalAlpha=1-a;prop(ctx,e.type,e.x+e.dir*a*12,e.y+18*a,145,a*.65*e.dir,e.dir);}
@@ -853,16 +802,39 @@ function speedLines(x,y,dir,t,color='#f1d791') {
   ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;
   for(let i=0;i<4;i++){const phase=(t*5+i*.22)%1;ctx.globalAlpha=(1-phase)*.7;ctx.beginPath();ctx.moveTo(x-dir*(12+phase*40),y-8-i*11);ctx.lineTo(x-dir*(28+phase*62),y-7-i*11);ctx.stroke();}ctx.restore();
 }
+function drawDropZone(e,t){
+  const p=locate(e.s),pulse=.72+.28*Math.sin(t*8);
+  ctx.save();
+  ctx.globalAlpha=.2+.16*pulse;ctx.fillStyle='#d51f1f';
+  ctx.beginPath();ctx.ellipse(p.x,p.y,84,24,0,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=.95;ctx.strokeStyle='#ff3b2f';ctx.lineWidth=7;
+  ctx.beginPath();ctx.ellipse(p.x,p.y,84,24,0,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='#ffd0c4';ctx.lineWidth=2;ctx.setLineDash([8,6]);
+  ctx.beginPath();ctx.ellipse(p.x,p.y,62,16,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  text(ctx,`落点 ${Math.ceil(e.airborne)} 秒`,p.x,p.y+38,18,'#ffb8a8');
+  ctx.restore();
+}
+function drawBiteTrail(){
+  const e=game.nearestChaser?.();if(!e||game.liu.carrier)return;
+  const band=game.biteBand?.();if(band!=='caught'&&band!=='miss')return;
+  const a=locate(e.s),b=locate(game.liu.s);
+  for(let i=1;i<6;i++){
+    const t=i/6,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;
+    ctx.save();ctx.globalAlpha=.32+.28*Math.sin(game.time*10+i);ctx.fillStyle='#c4281c';
+    ctx.beginPath();ctx.ellipse(x-6,y+2,7,3,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x+6,y-1,7,3,0,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+}
 function drawAirborne(e,t){
   const p=locate(e.s),a=e.airborne/e.dropDuration,sway=Math.sin(t*5+e.id)*13*a;
+  drawDropZone(e,t);
   if(e.boss){
     ctx.save();ctx.globalAlpha=1-a*.75;actor(ctx,e.type,p.x-70*a,p.y,actorSizes[e.type],p.dir,'idle',t);
-    ctx.globalAlpha=1;ctx.strokeStyle=ENEMY_TYPES[e.role].color;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(p.x,p.y,70,12,0,0,Math.PI*2);ctx.stroke();text(ctx,`${ENEMY_TYPES[e.role].name}集结 · ${Math.ceil(e.airborne)}秒`,p.x,p.y-actorSizes[e.type]-20,20,ENEMY_TYPES[e.role].color);ctx.restore();return;
+    ctx.globalAlpha=1;text(ctx,`${ENEMY_TYPES[e.role].name}集结 · ${Math.ceil(e.airborne)}秒`,p.x,p.y-actorSizes[e.type]-20,20,ENEMY_TYPES[e.role].color);ctx.restore();return;
   }
   const x=p.x+sway,y=p.y-a*230,dir=p.dir*e.direction;
-  ctx.save();ctx.strokeStyle='#a9e6df';ctx.lineWidth=3;ctx.setLineDash([7,5]);
-  ctx.beginPath();ctx.ellipse(p.x,p.y,55+Math.sin(t*9)*7,12,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
-  text(ctx,`空降 ${Math.ceil(e.airborne)} 秒`,p.x,p.y-18,17,'#c7f1e3');
+  ctx.save();
   actor(ctx,e.type,x,y,128,dir,'run',t*12,0,.95);
   ctx.translate(x,y-170);ctx.rotate(Math.sin(t*4)*.07);
   ctx.strokeStyle='#443629';ctx.lineWidth=3;
@@ -912,16 +884,14 @@ function speechBubble(x,y,message,size=22) {
 function render() {
   ctx.setTransform(canvas.width/WIDTH,0,0,canvas.height/HEIGHT,0,0);
   ctx.save();if(game.shake>0&&hapticsEnabled&&!reducedMotion)ctx.translate(Math.sin(game.time*97)*game.shake*24,Math.cos(game.time*73)*game.shake*13);
-  const t=game.mode==='ready'?idleClock:game.intro?.time??game.time;
+  const t=game.mode==='ready'?idleClock:game.time;
   enemyLabelBoxes.length=0;
   drawBackground(t);
   drawCaozhangGate(t);
   drawFerry(t);
   drawMechanisms(t);
   if(game.mount&&!game.mount.claimed)drawMount(locate(game.mount.s));
-  if(game.mode==='intro')drawIntroHorse();
-  const previewUnit=skillPress&&game.units.find(u=>u.type===skillPress.type);
-  if(previewUnit){const p=SLOTS[previewUnit.slot],range=game.types[previewUnit.type].skillRange;ctx.strokeStyle='#aee9f4';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(p.x,p.y,range,35,0,0,Math.PI*2);ctx.stroke();}
+  drawBiteTrail();
   if(drag){const slot=dropSlot(drag.clientX,drag.clientY),def=game.types[drag.type];if(slot){text(ctx,drag.dir>0?'→':'←',slot.x,slot.y-40,54,'#ffe3a0');if(def.range){ctx.strokeStyle='#ffe3a0aa';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(slot.x,slot.y,def.range,24,0,0,Math.PI*2);ctx.stroke();}}}
   for(const e of game.effects)if(e.kind==='oil')drawEffect(e);
   const actors=[];
@@ -955,15 +925,13 @@ function render() {
   }
   const liu=locate(game.liu.s);
   if(!game.liu.carrier){
-    if(game.liu.mounted)drawMount(liu,true);
-    else{shadow(liu.x,liu.y,34);actor(ctx,'liubei',liu.x,liu.y,actorSizes.liubei,liu.dir,game.mode==='ready'||game.mode==='intro'?'idle':'run',game.liu.walk);}
+    if(game.liu.mounted||game.liu.dash>0)drawMount(liu,true,game.liu.mounted?undefined:game.liu.walk);
+    else{shadow(liu.x,liu.y,34);actor(ctx,'liubei',liu.x,liu.y,actorSizes.liubei,liu.dir,game.mode==='ready'?'idle':'run',game.liu.walk);}
   }
-  if(game.mode==='intro'&&game.intro.phase==='reply')speechBubble(liu.x,liu.y,game.intro.reply,30);
   if(game.liu.dash>0||game.liu.mounted)speedLines(liu.x,liu.y,liu.dir,t);
-  if(game.liu.dash>0&&!game.liu.carrier&&!game.liu.mounted)paintedSign('脚底抹油！ '+Math.ceil(game.liu.dash)+'秒',liu.x-110,liu.y-185,220,38,22,'#ffe087','brush');
   for(const e of game.enemies)if(e.airborne>0)drawAirborne(e,t);
   for(const e of game.effects)if(e.kind!=='oil')drawEffect(e);
-  if(speechUntil>game.time && speech && game.mode==='running'&&!(game.liu.dash>0&&(!speechAnchor||speechAnchor==='liubei'))&&!game.effects.some(e=>e.kind==='guard-arrival')){
+  if(speechUntil>game.time && speech && game.mode==='running'&&!(game.liu.dash>0&&(!speechAnchor||speechAnchor==='liubei'))){
     let speaker=liu;
     if(speechAnchor?.slot!==undefined){const unit=game.units.find(u=>u.slot===speechAnchor.slot);if(unit)speaker=SLOTS[unit.slot];else speaker=null;}
     else if(speechAnchor?.enemy){const enemy=game.enemies.find(e=>e.id===speechAnchor.enemy);speaker=enemy?locate(enemy.s):null;}
@@ -971,14 +939,7 @@ function render() {
   }
   ctx.restore();
 }
-function drawDashIcon(){
-  const canvas=$('liu-dash-icon'),c=canvas.getContext('2d');c.clearRect(0,0,96,96);
-  if(!images.actors)return;
-  const cell=images.actors.width/4,scale=cell/512;
-  c.drawImage(images.actors,90*scale,48*scale,300*scale,300*scale,6,4,84,84);
-}
 function drawCards(){
-  drawDashIcon();
   const heads={guanyu:[116,134,290,253],zhangfei:[130,145,280,250],zhugeliang:[210,35,270,300],archer:[130,55,245,265]};
   for(const [type,{icon}]of cards){
     const c=icon.getContext('2d');c.clearRect(0,0,180,132);
@@ -994,7 +955,7 @@ function drawCards(){
 function loop(now){
   if(!previous)previous=now;const delta=Math.min((now-previous)/1000,.1);previous=now;idleClock+=delta;
   const battleDelta=delta*battleSpeed;
-  if(['running','intro'].includes(game.mode)&&!document.hidden){
+  if(game.mode==='running'&&!document.hidden){
     if(game.mode==='running'&&game.level.boss&&now>=nextWarDrum){sound('war-drum');nextWarDrum=now+1400;}
     if(impactPause>0){impactPause=Math.max(0,impactPause-battleDelta);accumulated=0;}
     // Speed up the battle clock while keeping collision steps and paint pacing unchanged.
@@ -1012,9 +973,26 @@ function loop(now){
           if(dx||dy){camera.pan(dx,dy);lastCameraManual=now;applyCamera();refreshDrag();}
         }
       }else if(!camera.follow&&now-lastCameraManual>3000){camera.follow=true;}
-      if(camera.follow){const p=locate(game.liu.s),guard=game.effects.some(e=>e.kind==='guard-arrival');camera.track(p.x,p.y-(guard?45:0),battleDelta);applyCamera();}
+      if(camera.follow){
+        const look=game.lookback;
+        if(look&&look.life>0)camera.track(look.x,look.y,battleDelta);
+        else{
+          const p=locate(game.liu.s),chaser=game.nearestChaser?.();
+          const air=game.enemies.find(e=>e.hp>0&&(e.airborne>0||e.blockRoad));
+          if(chaser){
+            const q=locate(chaser.s);
+            camera.framePair(p.x,p.y,q.x,q.y);
+          }else if(air){
+            const q=locate(air.s);
+            camera.framePair(p.x,p.y,q.x,q.y);
+          }else camera.track(p.x,p.y,battleDelta);
+        }
+        world.style.width=`${WIDTH*camera.scale}px`;
+        world.style.height=`${HEIGHT*camera.scale}px`;
+        applyCamera();
+      }
     }
-    const active=['running','intro'].includes(game.mode)&&$('camp').hidden;
+    const active=game.mode==='running'&&$('camp').hidden;
     if(frameBudget.due(now,active)){
       resizeCanvas();
       const paintStart=performance.now();render();updateLiuIndicator();
@@ -1030,7 +1008,7 @@ async function loadAssets(){
   $('start').disabled=true;$('start').textContent='整备中…';
   $('load-progress').hidden=false;
   $('sound').disabled=true;
-  const files=[['castle','assets/game/changban-v1.webp',435406],['actors','assets/game/actors-v2.webp',423078],['troops','assets/game/shu-infantry-v1.webp',227570],['props','assets/game/props.webp',40528],['rigs','assets/game/rigs.json',21102],['commanders','assets/game/cao-commanders-v1.webp',150386],['devices','assets/game/shu-devices-v3.webp',86246],['zhaoyun','assets/game/zhaoyun-adou-v1.webp',76330],['bgm','assets/game/liu-run-bgm-v1.mp3',947053]];
+  const files=[['castle','assets/game/changban-v1.webp',435406],['actors','assets/game/actors-v2.webp',423078],['troops','assets/game/shu-infantry-v1.webp',227570],['props','assets/game/props.webp',40528],['rigs','assets/game/rigs.json',21102],['commanders','assets/game/cao-commanders-v1.webp',150386],['devices','assets/game/shu-devices-v3.webp',86246],['bgm','assets/game/liu-run-bgm-v1.mp3',947053]];
   files.push(
     ['camp-home','assets/game/camp-home-v2.webp',181174],
     ['camp-backdrop','assets/game/camp-backdrop-v1.webp',136548],
